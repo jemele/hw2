@@ -1,0 +1,16 @@
+tags
+*.lock
+*.d
+*.o
+*.a
+*.elf
+*.elf.size
+*.log
+*.jou
+*.tree
+*.snap
+*.markers
+*.history*
+*.indexes*
+*.index
+*.pdom
