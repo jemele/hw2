@@ -6,25 +6,10 @@ C:\Xilinx\14.7\ISE_DS\ISE\.
 -1
 Opened constraints file system_stub.pcf.
 
-Thu Apr 30 19:45:50 2015
+Fri May 01 01:49:09 2015
 
 C:\Xilinx\14.7\ISE_DS\ISE\bin\nt\unwrapped\bitgen.exe -g UnconstrainedPins:Allow -w -intstyle pa system_stub_routed.ncd system_stub.bit system_stub.pcf 
 
-WARNING:Bitgen:343 - This design contains pins which have locations (LOC) that
-   are not user-assigned or I/O Standards (IOSTANDARD) that are not
-   user-assigned.  This may cause I/O contention or incompatibility with the
-   board power or connectivity affecting performance, signal integrity or in
-   extreme cases cause damage to the device or the components to which it is
-   connected.  To prevent this warning, it is highly suggested to specify all
-   pin locations and I/O standards to avoid potential contention or conflicts
-   and allow proper bitstream creation.
-This message applies to the following I/O ports:
-   processing_system7_0_FCLK_CLK0_pin
-   pushbuttons[0]
-   pushbuttons[4]
-   pushbuttons[1]
-   pushbuttons[2]
-   pushbuttons[3]
 Summary of Bitgen Options:
 +----------------------+----------------------+
 | Option Name          | Current Setting      |
@@ -106,38 +91,7 @@ There were 0 CONFIG constraint(s) processed from system_stub.pcf.
 
 
 Running DRC.
-WARNING:PhysDesignRules:2452 - The IOB processing_system7_0_FCLK_CLK0_pin is
-   either not constrained (LOC) to a specific location and/or has an undefined
-   I/O Standard (IOSTANDARD). This condition may seriously affect the device and
-   will be an error in bitstream creation. It should be corrected by properly
-   specifying the pin location and I/O Standard.
-WARNING:PhysDesignRules:2452 - The IOB pushbuttons[3] is either not constrained
-   (LOC) to a specific location and/or has an undefined I/O Standard
-   (IOSTANDARD). This condition may seriously affect the device and will be an
-   error in bitstream creation. It should be corrected by properly specifying
-   the pin location and I/O Standard.
-WARNING:PhysDesignRules:2452 - The IOB pushbuttons[4] is either not constrained
-   (LOC) to a specific location and/or has an undefined I/O Standard
-   (IOSTANDARD). This condition may seriously affect the device and will be an
-   error in bitstream creation. It should be corrected by properly specifying
-   the pin location and I/O Standard.
-WARNING:PhysDesignRules:2452 - The IOB pushbuttons[0] is either not constrained
-   (LOC) to a specific location and/or has an undefined I/O Standard
-   (IOSTANDARD). This condition may seriously affect the device and will be an
-   error in bitstream creation. It should be corrected by properly specifying
-   the pin location and I/O Standard.
-WARNING:PhysDesignRules:2452 - The IOB pushbuttons[1] is either not constrained
-   (LOC) to a specific location and/or has an undefined I/O Standard
-   (IOSTANDARD). This condition may seriously affect the device and will be an
-   error in bitstream creation. It should be corrected by properly specifying
-   the pin location and I/O Standard.
-WARNING:PhysDesignRules:2452 - The IOB pushbuttons[2] is either not constrained
-   (LOC) to a specific location and/or has an undefined I/O Standard
-   (IOSTANDARD). This condition may seriously affect the device and will be an
-   error in bitstream creation. It should be corrected by properly specifying
-   the pin location and I/O Standard.
-DRC detected 0 errors and 6 warnings.  Please see the previously displayed
-individual error or warning messages for more details.
+DRC detected 0 errors and 0 warnings.
 Creating bit map...
 Saving bit stream in "system_stub.bit".
 Bitstream generation is complete.

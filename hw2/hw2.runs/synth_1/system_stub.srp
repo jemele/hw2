@@ -3,7 +3,7 @@ Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
 --> 
 
 Total REAL time to Xst completion: 1.00 secs
-Total CPU time to Xst completion: 0.72 secs
+Total CPU time to Xst completion: 0.63 secs
  
 --> Reading design: system_stub.prj
 
@@ -56,6 +56,8 @@ Cores Search Directories           : {..\..\hw2.srcs\sources_1\edk\system\implem
 =========================================================================
 *                          HDL Parsing                                  *
 =========================================================================
+Analyzing Verilog file "C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.srcs/sources_1/imports/wes237a/debouncer.v" into library work
+Parsing module <debouncer>.
 Analyzing Verilog file "C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.srcs/sources_1/edk/system/hdl/system.v" into library work
 Parsing module <system>.
 Parsing module <system_processing_system7_0_wrapper>.
@@ -73,6 +75,9 @@ Elaborating module <system_stub>.
 Elaborating module <system>.
 WARNING:HDLCompiler:1499 - "C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.srcs/sources_1/edk/system/hdl/system.v" Line 5: Empty module <system> remains a black box.
 
+Elaborating module <debouncer>.
+WARNING:HDLCompiler:413 - "C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.srcs/sources_1/imports/wes237a/debouncer.v" Line 42: Result of 5-bit expression is truncated to fit in 4-bit target.
+
 =========================================================================
 *                           HDL Synthesis                               *
 =========================================================================
@@ -84,10 +89,70 @@ Synthesizing Unit <system_stub>.
 	no macro.
 Unit <system_stub> synthesized.
 
+Synthesizing Unit <debouncer>.
+    Related source file is "C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.srcs/sources_1/imports/wes237a/debouncer.v".
+        depth_select = 4
+        data_width = 5
+    Found 1-bit register for signal <button_ff<0><2>>.
+    Found 1-bit register for signal <button_ff<0><1>>.
+    Found 1-bit register for signal <button_ff<0><0>>.
+    Found 1-bit register for signal <Buttons_out<0>>.
+    Found 1-bit register for signal <button_ff<1><3>>.
+    Found 1-bit register for signal <button_ff<1><2>>.
+    Found 1-bit register for signal <button_ff<1><1>>.
+    Found 1-bit register for signal <button_ff<1><0>>.
+    Found 1-bit register for signal <Buttons_out<1>>.
+    Found 1-bit register for signal <button_ff<2><3>>.
+    Found 1-bit register for signal <button_ff<2><2>>.
+    Found 1-bit register for signal <button_ff<2><1>>.
+    Found 1-bit register for signal <button_ff<2><0>>.
+    Found 1-bit register for signal <Buttons_out<2>>.
+    Found 1-bit register for signal <button_ff<3><3>>.
+    Found 1-bit register for signal <button_ff<3><2>>.
+    Found 1-bit register for signal <button_ff<3><1>>.
+    Found 1-bit register for signal <button_ff<3><0>>.
+    Found 1-bit register for signal <Buttons_out<3>>.
+    Found 1-bit register for signal <button_ff<4><3>>.
+    Found 1-bit register for signal <button_ff<4><2>>.
+    Found 1-bit register for signal <button_ff<4><1>>.
+    Found 1-bit register for signal <button_ff<4><0>>.
+    Found 1-bit register for signal <Buttons_out<4>>.
+    Found 4-bit register for signal <valid_state>.
+    Found 1-bit register for signal <button_ff<0><3>>.
+    Found 4-bit adder for signal <button_ff[0][3]_GND_3_o_add_2_OUT> created at line 42.
+    Found 4-bit adder for signal <button_ff[1][3]_GND_3_o_add_8_OUT> created at line 42.
+    Found 4-bit adder for signal <button_ff[2][3]_GND_3_o_add_14_OUT> created at line 42.
+    Found 4-bit adder for signal <button_ff[3][3]_GND_3_o_add_20_OUT> created at line 42.
+    Found 4-bit adder for signal <button_ff[4][3]_GND_3_o_add_26_OUT> created at line 42.
+    Found 4-bit comparator greater for signal <button_ff[0][3]_valid_state[3]_LessThan_2_o> created at line 41
+    Found 4-bit comparator equal for signal <button_ff[0][3]_valid_state[3]_equal_6_o> created at line 49
+    Found 4-bit comparator greater for signal <button_ff[1][3]_valid_state[3]_LessThan_8_o> created at line 41
+    Found 4-bit comparator equal for signal <button_ff[1][3]_valid_state[3]_equal_12_o> created at line 49
+    Found 4-bit comparator greater for signal <button_ff[2][3]_valid_state[3]_LessThan_14_o> created at line 41
+    Found 4-bit comparator equal for signal <button_ff[2][3]_valid_state[3]_equal_18_o> created at line 49
+    Found 4-bit comparator greater for signal <button_ff[3][3]_valid_state[3]_LessThan_20_o> created at line 41
+    Found 4-bit comparator equal for signal <button_ff[3][3]_valid_state[3]_equal_24_o> created at line 49
+    Found 4-bit comparator greater for signal <button_ff[4][3]_valid_state[3]_LessThan_26_o> created at line 41
+    Found 4-bit comparator equal for signal <button_ff[4][3]_valid_state[3]_equal_30_o> created at line 49
+    Summary:
+	inferred   5 Adder/Subtractor(s).
+	inferred  29 D-type flip-flop(s).
+	inferred  10 Comparator(s).
+Unit <debouncer> synthesized.
+
 =========================================================================
 HDL Synthesis Report
 
-Found no macro
+Macro Statistics
+# Adders/Subtractors                                   : 5
+ 4-bit adder                                           : 5
+# Registers                                            : 7
+ 4-bit register                                        : 6
+ 5-bit register                                        : 1
+# Comparators                                          : 10
+ 4-bit comparator equal                                : 5
+ 4-bit comparator greater                              : 5
+
 =========================================================================
 
 =========================================================================
@@ -103,15 +168,35 @@ Loading core <system_processing_system7_0_wrapper> for timing and area informati
 Loading core <system_axi_interconnect_1_wrapper> for timing and area information for instance <axi_interconnect_1>.
 Loading core <system> for timing and area information for instance <system_i>.
 
+Synthesizing (advanced) Unit <debouncer>.
+The following registers are absorbed into counter <button_ff<1><3:0>>: 1 register on signal <button_ff<1><3:0>>.
+The following registers are absorbed into counter <button_ff<0><3:0>>: 1 register on signal <button_ff<0><3:0>>.
+The following registers are absorbed into counter <button_ff<2><3:0>>: 1 register on signal <button_ff<2><3:0>>.
+The following registers are absorbed into counter <button_ff<3><3:0>>: 1 register on signal <button_ff<3><3:0>>.
+The following registers are absorbed into counter <button_ff<4><3:0>>: 1 register on signal <button_ff<4><3:0>>.
+Unit <debouncer> synthesized (advanced).
+
 =========================================================================
 Advanced HDL Synthesis Report
 
-Found no macro
+Macro Statistics
+# Counters                                             : 5
+ 4-bit up counter                                      : 5
+# Registers                                            : 9
+ Flip-Flops                                            : 9
+# Comparators                                          : 10
+ 4-bit comparator equal                                : 5
+ 4-bit comparator greater                              : 5
+
 =========================================================================
 
 =========================================================================
 *                         Low Level Synthesis                           *
 =========================================================================
+WARNING:Xst:1710 - FF/Latch <_i000035_0> (without init value) has a constant value of 1 in block <debouncer>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <_i000035_1> (without init value) has a constant value of 1 in block <debouncer>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <_i000035_2> (without init value) has a constant value of 1 in block <debouncer>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <_i000035_3> (without init value) has a constant value of 1 in block <debouncer>. This FF/Latch will be trimmed during the optimization process.
 
 WARNING:Xst:528 - Multi-source in Unit <processing_system7_0> on signal <PS_SRSTB>; this signal is connected to multiple drivers.
 Drivers are: 
@@ -130,6 +215,8 @@ Drivers are:
 
 Optimizing unit <system_stub> ...
 
+Optimizing unit <debouncer> ...
+
 Mapping all equations...
 Building and optimizing final netlist ...
 Found area constraint ratio of 100 (+ 0) on block system_stub, actual ratio is 0.
@@ -145,7 +232,10 @@ Final Macro Processing ...
 =========================================================================
 Final Register Report
 
-Found no macro
+Macro Statistics
+# Registers                                            : 25
+ Flip-Flops                                            : 25
+
 =========================================================================
 
 =========================================================================
@@ -167,33 +257,32 @@ Top Level Output File Name         : system_stub.ngc
 
 Primitive and Black Box Usage:
 ------------------------------
-# BELS                             : 399
+# BELS                             : 434
 #      GND                         : 4
-#      INV                         : 97
-#      LUT2                        : 64
-#      LUT3                        : 29
-#      LUT4                        : 82
-#      LUT5                        : 24
+#      INV                         : 107
+#      LUT2                        : 69
+#      LUT3                        : 34
+#      LUT4                        : 92
+#      LUT5                        : 29
 #      LUT6                        : 84
 #      MUXCY                       : 8
 #      MUXF7                       : 1
 #      VCC                         : 2
 #      XORCY                       : 4
-# FlipFlops/Latches                : 209
-#      FD                          : 35
+# FlipFlops/Latches                : 234
+#      FD                          : 40
 #      FDC                         : 6
 #      FDE                         : 66
 #      FDR                         : 51
-#      FDRE                        : 44
+#      FDRE                        : 64
 #      FDS                         : 2
 #      FDSE                        : 5
 # Shift Registers                  : 5
 #      SRLC16E                     : 5
 # Clock Buffers                    : 1
 #      BUFG                        : 1
-# IO Buffers                       : 9
+# IO Buffers                       : 8
 #      IBUF                        : 8
-#      OBUF                        : 1
 # Others                           : 1
 #      PS7                         : 1
 
@@ -204,22 +293,22 @@ Selected Device : 7z020clg484-1
 
 
 Slice Logic Utilization: 
- Number of Slice Registers:             209  out of  106400     0%  
- Number of Slice LUTs:                  385  out of  53200     0%  
-    Number used as Logic:               380  out of  53200     0%  
+ Number of Slice Registers:             234  out of  106400     0%  
+ Number of Slice LUTs:                  420  out of  53200     0%  
+    Number used as Logic:               415  out of  53200     0%  
     Number used as Memory:                5  out of  17400     0%  
        Number used as SRL:                5
 
 Slice Logic Distribution: 
- Number of LUT Flip Flop pairs used:    444
-   Number with an unused Flip Flop:     235  out of    444    52%  
-   Number with an unused LUT:            59  out of    444    13%  
-   Number of fully used LUT-FF pairs:   150  out of    444    33%  
-   Number of unique control sets:        20
+ Number of LUT Flip Flop pairs used:    484
+   Number with an unused Flip Flop:     250  out of    484    51%  
+   Number with an unused LUT:            64  out of    484    13%  
+   Number of fully used LUT-FF pairs:   170  out of    484    35%  
+   Number of unique control sets:        26
 
 IO Utilization: 
- Number of IOs:                         136
- Number of bonded IOBs:                   9  out of    200     4%  
+ Number of IOs:                         135
+ Number of bonded IOBs:                   8  out of    200     4%  
 
 Specific Feature Utilization:
  Number of BUFG/BUFGCTRLs:                1  out of     32     3%  
@@ -245,7 +334,7 @@ Clock Information:
 -------------------------------------------------------------------------+------------------------+-------+
 Clock Signal                                                             | Clock buffer(FF name)  | Load  |
 -------------------------------------------------------------------------+------------------------+-------+
-system_i/processing_system7_0/processing_system7_0/FCLK_CLK_unbuffered<0>| BUFG                   | 214   |
+system_i/processing_system7_0/processing_system7_0/FCLK_CLK_unbuffered<0>| BUFG                   | 239   |
 -------------------------------------------------------------------------+------------------------+-------+
 
 Asynchronous Control Signals Information:
@@ -268,7 +357,7 @@ All values displayed in nanoseconds (ns)
 =========================================================================
 Timing constraint: Default period analysis for Clock 'system_i/processing_system7_0/processing_system7_0/FCLK_CLK_unbuffered<0>'
   Clock period: 4.081ns (frequency: 245.038MHz)
-  Total number of paths / destination ports: 3930 / 414
+  Total number of paths / destination ports: 4085 / 464
 -------------------------------------------------------------------------
 Delay:               4.081ns (Levels of Logic = 5)
   Source:            system_i/axi_interconnect_1/axi_interconnect_1/crossbar_samd/gen_sasd.crossbar_sasd_0/gen_crossbar.splitter_ar/m_ready_d_1 (FF)
@@ -294,7 +383,7 @@ Delay:               4.081ns (Levels of Logic = 5)
 
 =========================================================================
 Timing constraint: Default OFFSET IN BEFORE for Clock 'system_i/processing_system7_0/processing_system7_0/FCLK_CLK_unbuffered<0>'
-  Total number of paths / destination ports: 309 / 148
+  Total number of paths / destination ports: 344 / 183
 -------------------------------------------------------------------------
 Offset:              2.180ns (Levels of Logic = 5)
   Source:            system_i/processing_system7_0/processing_system7_0/PS7_i:MAXIGP0WVALID (PAD)
@@ -362,14 +451,14 @@ system_i/processing_system7_0/processing_system7_0/FCLK_CLK_unbuffered<0>|    4.
 =========================================================================
 
 
-Total REAL time to Xst completion: 48.00 secs
-Total CPU time to Xst completion: 47.40 secs
+Total REAL time to Xst completion: 54.00 secs
+Total CPU time to Xst completion: 54.09 secs
  
 --> 
 
-Total memory usage is 352752 kilobytes
+Total memory usage is 277416 kilobytes
 
 Number of errors   :    0 (   0 filtered)
-Number of warnings :    4 (   0 filtered)
+Number of warnings :    9 (   0 filtered)
 Number of infos    :    6 (   0 filtered)
 

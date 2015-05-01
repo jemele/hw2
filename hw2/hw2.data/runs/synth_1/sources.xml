@@ -2,6 +2,15 @@
 <DARoots Version="1" Minor="26">
   <FileSet Name="sources" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
     <Filter Type="Srcs"/>
+    <File Path="$PSRCDIR/sources_1/imports/wes237a/debouncer.v">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../debouncer.v"/>
+        <Attr Name="ImportTime" Val="1430380410"/>
+        <Attr Name="UsedInSynthesis" Val="1"/>
+        <Attr Name="UsedInImplementation" Val="1"/>
+        <Attr Name="UsedInSimulation" Val="1"/>
+      </FileInfo>
+    </File>
     <File Path="$PSRCDIR/sources_1/edk/system/system.xmp">
       <FileInfo>
         <Attr Name="UsedInSynthesis" Val="1"/>
@@ -13,15 +22,6 @@
       <FileInfo>
         <Attr Name="ImportPath" Val="$PSRCDIR/sources_1/edk/system/system_stub.v"/>
         <Attr Name="ImportTime" Val="1430441553"/>
-        <Attr Name="UsedInSynthesis" Val="1"/>
-        <Attr Name="UsedInImplementation" Val="1"/>
-        <Attr Name="UsedInSimulation" Val="1"/>
-      </FileInfo>
-    </File>
-    <File Path="$PSRCDIR/sources_1/imports/wes237a/debouncer.v">
-      <FileInfo>
-        <Attr Name="ImportPath" Val="$PPRDIR/../debouncer.v"/>
-        <Attr Name="ImportTime" Val="1430380410"/>
         <Attr Name="UsedInSynthesis" Val="1"/>
         <Attr Name="UsedInImplementation" Val="1"/>
         <Attr Name="UsedInSimulation" Val="1"/>

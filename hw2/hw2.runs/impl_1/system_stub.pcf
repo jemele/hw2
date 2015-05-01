@@ -1,5 +1,5 @@
 //! **************************************************************************
-// Written by: Map P.20131013 on Thu Apr 30 19:41:00 2015
+// Written by: Map P.20131013 on Fri May 01 01:44:17 2015
 //! **************************************************************************
 
 SCHEMATIC START;
@@ -52,8 +52,13 @@ COMP "processing_system7_0_MIO[38]" LOCATE = SITE "F13" LEVEL 1;
 COMP "processing_system7_0_MIO[37]" LOCATE = SITE "B14" LEVEL 1;
 COMP "processing_system7_0_MIO[39]" LOCATE = SITE "C13" LEVEL 1;
 COMP "processing_system7_0_MIO[30]" LOCATE = SITE "A11" LEVEL 1;
+COMP "inputbuttons[3]" LOCATE = SITE "R16" LEVEL 1;
 COMP "processing_system7_0_MIO[32]" LOCATE = SITE "C7" LEVEL 1;
+COMP "inputbuttons[4]" LOCATE = SITE "P16" LEVEL 1;
 COMP "processing_system7_0_MIO[31]" LOCATE = SITE "F9" LEVEL 1;
+COMP "inputbuttons[1]" LOCATE = SITE "R18" LEVEL 1;
+COMP "inputbuttons[2]" LOCATE = SITE "N15" LEVEL 1;
+COMP "inputbuttons[0]" LOCATE = SITE "T18" LEVEL 1;
 COMP "processing_system7_0_DDR_RAS_n" LOCATE = SITE "R5" LEVEL 1;
 COMP "processing_system7_0_DDR_DQS_n[0]" LOCATE = SITE "D2" LEVEL 1;
 COMP "processing_system7_0_DDR_DQS_n[1]" LOCATE = SITE "J2" LEVEL 1;
@@ -133,7 +138,19 @@ COMP "processing_system7_0_DDR_DQS[3]" LOCATE = SITE "V2" LEVEL 1;
 PIN system_i/processing_system7_0/processing_system7_0/PS7_i_pins<357> = BEL
         "system_i/processing_system7_0/processing_system7_0/PS7_i" PINNAME
         MAXIGP0ACLK;
-TIMEGRP clk_fpga_0 = BEL
+TIMEGRP clk_fpga_0 = BEL "db1/button_ff<3><3:0>_0" BEL
+        "db1/button_ff<3><3:0>_1" BEL "db1/button_ff<3><3:0>_2" BEL
+        "db1/button_ff<3><3:0>_3" BEL "db1/button_ff<2><3:0>_0" BEL
+        "db1/button_ff<2><3:0>_1" BEL "db1/button_ff<2><3:0>_2" BEL
+        "db1/button_ff<2><3:0>_3" BEL "db1/button_ff<4><3:0>_0" BEL
+        "db1/button_ff<4><3:0>_1" BEL "db1/button_ff<4><3:0>_2" BEL
+        "db1/button_ff<4><3:0>_3" BEL "db1/button_ff<0><3:0>_0" BEL
+        "db1/button_ff<0><3:0>_1" BEL "db1/button_ff<0><3:0>_2" BEL
+        "db1/button_ff<0><3:0>_3" BEL "db1/button_ff<1><3:0>_0" BEL
+        "db1/button_ff<1><3:0>_1" BEL "db1/button_ff<1><3:0>_2" BEL
+        "db1/button_ff<1><3:0>_3" BEL "db1/Buttons_out_0" BEL
+        "db1/Buttons_out_3" BEL "db1/Buttons_out_2" BEL "db1/Buttons_out_1"
+        BEL "db1/Buttons_out_4" BEL
         "system_i/axi_gpio_0/axi_gpio_0/gpio_core_1/gpio_io_i_d2_3" BEL
         "system_i/axi_gpio_0/axi_gpio_0/IP2INTC_Irpt" BEL
         "system_i/axi_gpio_0/axi_gpio_0/ip2Bus_RdAck_intr_reg_hole_d1" BEL
@@ -422,7 +439,7 @@ TIMEGRP clk_fpga_0 = BEL
         "system_i/axi_interconnect_1/axi_interconnect_1/crossbar_samd/gen_sasd.crossbar_sasd_0/gen_crossbar.splitter_ar/m_ready_d_0"
         BEL
         "system_i/axi_interconnect_1/axi_interconnect_1/crossbar_samd/gen_sasd.crossbar_sasd_0/gen_crossbar.splitter_ar/m_ready_d_1"
-        BEL "processing_system7_0_FCLK_CLK0_pin" PIN
+        PIN
         "system_i/processing_system7_0/processing_system7_0/PS7_i_pins<357>";
 TIMEGRP axi_interconnect_1_reset_resync = BEL
         "system_i/axi_interconnect_1/axi_interconnect_1/si_converter_bank/gen_conv_slot[0].clock_conv_inst/interconnect_aresetn_resync_0"

@@ -25,8 +25,7 @@ module system_stub
     processing_system7_0_DDR_DQS_n,
     processing_system7_0_DDR_VRN,
     processing_system7_0_DDR_VRP,
-    pushbuttons,
-    processing_system7_0_FCLK_CLK0_pin
+    inputbuttons
   );
   inout [53:0] processing_system7_0_MIO;
   input processing_system7_0_PS_SRSTB_pin;
@@ -49,8 +48,9 @@ module system_stub
   inout [3:0] processing_system7_0_DDR_DQS_n;
   inout processing_system7_0_DDR_VRN;
   inout processing_system7_0_DDR_VRP;
-  input [4:0] pushbuttons;
-  output processing_system7_0_FCLK_CLK0_pin;
+  wire processing_system7_0_FCLK_CLK0_pin;
+  input [4:0] inputbuttons;
+  wire [4:0] pushbuttons;
 
   (* BOX_TYPE = "user_black_box" *)
   system
@@ -76,9 +76,14 @@ module system_stub
       .processing_system7_0_DDR_DQS_n ( processing_system7_0_DDR_DQS_n ),
       .processing_system7_0_DDR_VRN ( processing_system7_0_DDR_VRN ),
       .processing_system7_0_DDR_VRP ( processing_system7_0_DDR_VRP ),
-      .pushbuttons ( pushbuttons ),
-      .processing_system7_0_FCLK_CLK0_pin ( processing_system7_0_FCLK_CLK0_pin )
+      .processing_system7_0_FCLK_CLK0_pin ( processing_system7_0_FCLK_CLK0_pin ),
+      .pushbuttons ( pushbuttons )
     );
 
+debouncer db1(
+.Buttons_in( inputbuttons ),
+.Buttons_out ( pushbuttons ),
+.Clk ( processing_system7_0_FCLK_CLK0_pin )
+);
 endmodule
 

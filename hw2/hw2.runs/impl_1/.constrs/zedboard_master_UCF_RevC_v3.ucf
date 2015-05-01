@@ -257,15 +257,20 @@ NET VGA_VS        LOC = Y19  | IOSTANDARD=LVCMOS33;
 
 # Bank 34, Vcco = Vadj
 # "BTNC"
-NET inputbuttons[4]          LOC = P16  | IOSTANDARD=LVCMOS18;
+NET "inputbuttons[4]" LOC = P16;
+NET "inputbuttons[4]" IOSTANDARD = LVCMOS18;
 # "BTND"
-NET inputbuttons[3]          LOC = R16  | IOSTANDARD=LVCMOS18;
+NET "inputbuttons[3]" LOC = R16;
+NET "inputbuttons[3]" IOSTANDARD = LVCMOS18;
 # "BTNL"
-NET inputbuttons[2]          LOC = N15  | IOSTANDARD=LVCMOS18;
+NET "inputbuttons[2]" LOC = N15;
+NET "inputbuttons[2]" IOSTANDARD = LVCMOS18;
 # "BTNR"
-NET inputbuttons[1]          LOC = R18  | IOSTANDARD=LVCMOS18;
+NET "inputbuttons[1]" LOC = R18;
+NET "inputbuttons[1]" IOSTANDARD = LVCMOS18;
 # "BTNU"
-NET inputbuttons[0]          LOC = T18  | IOSTANDARD=LVCMOS18;
+NET "inputbuttons[0]" LOC = T18;
+NET "inputbuttons[0]" IOSTANDARD = LVCMOS18;
 # "FMC-CLK0_N"
 NET FMC_CLK0_N    LOC = L19  | IOSTANDARD=LVCMOS18;
 # "FMC-CLK0_P"

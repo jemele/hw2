@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <Runs Version="1" Minor="8">
-	<Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7z020clg484-1" LaunchPart="xc7z020clg484-1" ConstrsSet="constrs_1" Description="PlanAhead Defaults (XST defaults with hierarchy)" State="current" Dir="$PRUNDIR/synth_1" LaunchTime="1430447748">
+	<Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7z020clg484-1" LaunchPart="xc7z020clg484-1" ConstrsSet="constrs_1" Description="PlanAhead Defaults (XST defaults with hierarchy)" State="current" Dir="$PRUNDIR/synth_1" LaunchTime="1430469477">
 		<File Type="XST-NGC" Name="system_stub.ngc"/>
 		<File Type="RUN-STRAT" Name="$PDATADIR/runs/synth_1/synth_1.psg"/>
 		<File Type="XST-SRP" Name="system_stub.srp"/>
@@ -9,7 +9,7 @@
 		<File Type="PA-XSTPRJ" Name="system_stub.prj"/>
 		<File Type="RUN-CONSTRS" Name="$PDATADIR/runs/synth_1/constrs_in.xml"/>
 	</Run>
-	<Run Id="impl_1" Type="Ft2:EntireDesign" SynthRun="synth_1" Part="xc7z020clg484-1" LaunchPart="xc7z020clg484-1" ConstrsSet="constrs_1" Description="ISE Defaults, including packing registers in IOs off" State="current" Dir="$PRUNDIR/impl_1" LaunchTime="1430447839">
+	<Run Id="impl_1" Type="Ft2:EntireDesign" SynthRun="synth_1" Part="xc7z020clg484-1" LaunchPart="xc7z020clg484-1" ConstrsSet="constrs_1" Description="ISE Defaults, including packing registers in IOs off" State="current" Dir="$PRUNDIR/impl_1" LaunchTime="1430469614">
 		<File Type="PA-EDIF" Name="system_stub.edf"/>
 		<File Type="MAP-PSR" Name="system_stub.psr"/>
 		<File Type="PA-UCF" Name="system_stub.ucf"/>
