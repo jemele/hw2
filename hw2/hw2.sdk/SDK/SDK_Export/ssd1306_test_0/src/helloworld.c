@@ -38,10 +38,17 @@ const u8 ssd1306_init_sequence [] = {   // Initialization Sequence
     0xAF            // Display ON in normal mode
 };
 
-// Write a command out to the specified i2c device. 
+// Write a command out to the specified i2c device.
 void i2c_command(XIicPs *device, u8 addr, u8 command)
 {
     const u8 buf[] = {0x80,command};
+    XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
+}
+
+// Write data out to the specified i2c device.
+void i2c_data(XIicPs *device, u8 addr, u8 data)
+{
+    const u8 buf[] = {0x40,data};
     XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
 }
 
@@ -154,5 +161,12 @@ int main()
        i2c_command(&oled, 0x3c, ssd1306_init_sequence[i]); 
        usleep(2500);
     }
+
+    // Display the inspire logo.
+    for (i = 0; i < sizeof(Inspire)/sizeof(*Inspire); ++i) {
+        i2c_data(&oled, 0x3c, Inspire[i]);
+        usleep(2500);
+    }
+
     return 0;
 }
