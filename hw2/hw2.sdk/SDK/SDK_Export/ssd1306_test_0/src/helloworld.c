@@ -38,6 +38,7 @@ const u8 ssd1306_init_sequence [] = {   // Initialization Sequence
     0xAF            // Display ON in normal mode
 };
 
+static const u8 oled_addr = 0x3c;
 static const int i2c_write_delay = 300; // us
 
 // Write a command out to the specified i2c device.
@@ -174,26 +175,26 @@ int main()
     printf("oled initialization sequence\n");
     int i;
     for (i = 0; i < sizeof(ssd1306_init_sequence)/sizeof(*ssd1306_init_sequence); ++i) {
-       i2c_command(&oled, 0x3c, ssd1306_init_sequence[i]); 
+       i2c_command(&oled, oled_addr, ssd1306_init_sequence[i]);
     }
 
     // Display the inspire logo, then give some time to admire.
     printf("flashing logo\n");
     for (i = 0; i < sizeof(Inspire)/sizeof(*Inspire); ++i) {
-        i2c_data(&oled, 0x3c, Inspire[i]);
+        i2c_data(&oled, oled_addr, Inspire[i]);
     }
     sleep(5);
 
     // Blank the display, and then test character display.
     printf("blanking display\n");
     for (i = 0; i < sizeof(Inspire)/sizeof(*Inspire); ++i) {
-        i2c_data(&oled, 0x3c, 0);
+        i2c_data(&oled, oled_addr, 0);
     }
 
     printf("character display test\n");
     char c;
     for (c = ' '; c <= '}'; ++c) {
-        display_character(&oled, 0x3c, c);
+        display_character(&oled, oled_addr, c);
         usleep(2500);
     }
 

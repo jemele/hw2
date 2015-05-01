@@ -18,7 +18,7 @@
 <coolItem id="com.xilinx.sdk.targetmanager.ui.toolbar1" itemType="typeToolBarContribution" x="61" y="22"/>
 <coolItem id="com.xilinx.sdk.sw.toolbar1" itemType="typeToolBarContribution" x="38" y="22"/>
 <coolItem id="org.eclipse.search.searchActionSet" itemType="typeToolBarContribution" x="76" y="22"/>
-<coolItem id="org.eclipse.ui.edit.text.actionSet.presentation" itemType="typeToolBarContribution" x="61" y="22"/>
+<coolItem id="org.eclipse.ui.edit.text.actionSet.presentation" itemType="typeToolBarContribution" x="84" y="22"/>
 <coolItem id="group.nav" itemType="typeGroupMarker"/>
 <coolItem id="org.eclipse.ui.workbench.navigate" itemType="typeToolBarContribution" x="190" y="22"/>
 <coolItem id="group.editor" itemType="typeGroupMarker"/>
@@ -38,10 +38,10 @@
 </folder>
 </info>
 </editorArea>
-<editor id="com.xilinx.sdk.hw.ui.HwSpecXMLEditor" name="system.xml" partName="system.xml" path="C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.sdk/SDK/SDK_Export/system_hw_platform/system.xml" title="system.xml" tooltip="system_hw_platform/system.xml" workbook="DefaultEditorWorkbook">
+<editor activePart="true" focus="true" id="com.xilinx.sdk.hw.ui.HwSpecXMLEditor" name="system.xml" partName="system.xml" path="C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.sdk/SDK/SDK_Export/system_hw_platform/system.xml" title="system.xml" tooltip="system_hw_platform/system.xml" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/system_hw_platform/system.xml"/>
 </editor>
-<editor activePart="true" focus="true" id="com.xilinx.sdk.sw.MSSEditor" name="system.mss" partName="system.mss" path="C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.sdk/SDK/SDK_Export/standalone_bsp_0/system.mss" title="system.mss" tooltip="standalone_bsp_0/system.mss" workbook="DefaultEditorWorkbook">
+<editor id="com.xilinx.sdk.sw.MSSEditor" name="system.mss" partName="system.mss" path="C:/cygwin64/home/jemele/src/wes237a/hw2/hw2.sdk/SDK/SDK_Export/standalone_bsp_0/system.mss" title="system.mss" tooltip="standalone_bsp_0/system.mss" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/standalone_bsp_0/system.mss"/>
 </editor>
 </editors>
@@ -160,7 +160,7 @@
 </folder>
 </info>
 <info part="org.eclipse.ui.editorss" ratio="0.25" ratioLeft="250" ratioRight="750" relationship="2" relative="topLeft"/>
-<info folder="true" part="bottom" ratio="0.2197092" ratioLeft="136" ratioRight="483" relationship="4" relative="org.eclipse.ui.editorss">
+<info folder="true" part="bottom" ratio="0.74636513" ratioLeft="462" ratioRight="157" relationship="4" relative="org.eclipse.ui.editorss">
 <folder activePageID="org.eclipse.ui.console.ConsoleView" appearance="2" expanded="2">
 <page content="org.eclipse.ui.views.ProblemView" label="Problems"/>
 <page content="org.eclipse.ui.views.TaskList" label="Tasks"/>
@@ -203,6 +203,10 @@
 <editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/standalone_bsp_0/ps7_cortexa9_0/include/xiicps.h"/>
 <editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="com.xilinx.sdk.hw.ui.HwSpecXMLEditor" path="/system_hw_platform/system.xml"/>
 <editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="com.xilinx.sdk.sw.MSSEditor" path="/standalone_bsp_0/system.mss"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/standalone_bsp_0/ps7_cortexa9_0/libsrc/xilfatfs_v1_00_a/src/include/fat.h"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="" path="/standalone_bsp_0/system.mss"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/sdcard_test_0/src/helloworld.c"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="com.xilinx.sdk.hw.ui.HwSpecXMLEditor" path="/system_hw_platform/system.xml"/>
 </editors>
 <item historyLabel="system.xml" index="0"/>
 <item historyLabel="system.mss" index="1"/>
@@ -220,7 +224,22 @@
 <position info="not_deleted" x="13645" y="3"/>
 </item>
 <item historyLabel="system.xml" index="8"/>
-<item active="true" historyLabel="system.mss" index="9"/>
+<item historyLabel="system.mss" index="9">
+<position info="not_deleted" x="0" y="0"/>
+</item>
+<item historyLabel="fat.h" index="10">
+<position info="not_deleted" x="4406" y="5"/>
+</item>
+<item historyLabel="system.mss" index="9">
+<position info="not_deleted" x="0" y="0"/>
+</item>
+<item historyLabel="system.mss" index="11">
+<position info="not_deleted" x="0" y="0"/>
+</item>
+<item historyLabel="helloworld.c" index="12">
+<position info="not_deleted" x="0" y="0"/>
+</item>
+<item active="true" historyLabel="system.xml" index="13"/>
 </navigationHistory>
 <input factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/" type="8"/>
 </page>
@@ -238,6 +257,12 @@
 </trimLayout>
 </window>
 <mruList>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="helloworld.c" tooltip="sdcard_test_0/src/helloworld.c">
+<persistable path="/sdcard_test_0/src/helloworld.c"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="fat.h" tooltip="standalone_bsp_0/ps7_cortexa9_0/libsrc/xilfatfs_v1_00_a/src/include/fat.h">
+<persistable path="/standalone_bsp_0/ps7_cortexa9_0/libsrc/xilfatfs_v1_00_a/src/include/fat.h"/>
+</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="xiicps.h" tooltip="standalone_bsp_0/ps7_cortexa9_0/include/xiicps.h">
 <persistable path="/standalone_bsp_0/ps7_cortexa9_0/include/xiicps.h"/>
 </file>
