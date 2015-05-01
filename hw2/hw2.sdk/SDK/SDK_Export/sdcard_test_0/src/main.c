@@ -114,6 +114,7 @@
 
 /***************************** Include Files *********************************/
 
+#include "ff.h"
 #include "fsbl.h"
 #include "qspi.h"
 #include "nand.h"

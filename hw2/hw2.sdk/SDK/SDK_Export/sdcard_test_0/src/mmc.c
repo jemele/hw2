@@ -331,6 +331,7 @@ static int make_command (unsigned cmd)
 		case ACMD23:
 		case CMD24:
 		case CMD25:
+			retval |= RSP_R1|SD_CMD_DATA;
 		case CMD41:
 			retval |= RSP_R3;
 		break;
@@ -404,6 +405,21 @@ static BYTE send_cmd (BYTE cmd, DWORD arg, DWORD *response)
 
 	sd_out32(SD_ARG_R, arg);
 
+	/* Set the transfer mode to read, DMA, multiple block */
+	switch (cmd) {
+	case CMD18:
+		sd_out16(SD_TRNS_MODE_R, SD_TRNS_READ|SD_TRNS_MULTI|
+			SD_TRNS_ACMD12|SD_TRNS_BLK_CNT_EN|SD_TRNS_DMA);
+		break;
+	case CMD25:
+		sd_out16(SD_TRNS_MODE_R, SD_TRNS_MULTI|SD_TRNS_ACMD12|
+			SD_TRNS_BLK_CNT_EN|SD_TRNS_DMA);
+		break;
+	default:
+		sd_out16(SD_TRNS_MODE_R, SD_TRNS_READ|SD_TRNS_DMA);
+		break;
+	}
+#if 0
 	if (cmd!=CMD18) {
 		sd_out16(SD_TRNS_MODE_R, SD_TRNS_READ|SD_TRNS_DMA);
 	} else {
@@ -415,6 +431,7 @@ static BYTE send_cmd (BYTE cmd, DWORD arg, DWORD *response)
 		sd_out16(SD_TRNS_MODE_R, SD_TRNS_READ|SD_TRNS_MULTI|
 				SD_TRNS_ACMD12|SD_TRNS_BLK_CNT_EN|SD_TRNS_DMA);
 	}
+#endif
 
 	/*
 	 * Initiate the command
@@ -636,6 +653,40 @@ DRESULT disk_read (
     return RES_OK;
 }
 
+/*-----------------------------------------------------------------------*/
+/* Write Sector(s)							 */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_write (
+	BYTE drv,	/* Physical drive number (0) */
+	const BYTE *buff,	/* Pointer to the data buffer to store read data */
+	DWORD sector,	/* Start sector number (LBA) */
+	BYTE count	/* Sector count (1..128) */
+)
+{
+	DSTATUS s = disk_status(drv);
+	if (s & STA_NOINIT) return RES_NOTRDY;
+	if (!count) return RES_PARERR;
+
+	/* Convert LBA to byte address if needed */
+	if (!(CardType & CT_BLOCK)) sector *= SD_BLOCK_SZ;
+
+	blkcnt = count;
+	blksize= SD_BLOCK_SZ;
+
+	/* Set ADMA2 for the transfer */
+	setup_adma2_trans((BYTE *)buff);
+
+	/* Multiple block write */
+	send_cmd(CMD25, sector, 0);
+
+	/* Verify the transfer completed */
+	if (!dma_trans_cmpl()) {
+		return RES_ERROR;
+	}
+
+	return RES_OK;
+}
 
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions						*/
