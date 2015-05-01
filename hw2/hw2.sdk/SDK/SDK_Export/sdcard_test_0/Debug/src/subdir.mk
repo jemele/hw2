@@ -7,8 +7,7 @@ C_SRCS += \
 ../src/ff.c \
 ../src/main.c \
 ../src/mmc.c \
-../src/platform.c \
-../src/sd.c 
+../src/platform.c 
 
 LD_SRCS += \
 ../src/lscript.ld 
@@ -17,15 +16,13 @@ OBJS += \
 ./src/ff.o \
 ./src/main.o \
 ./src/mmc.o \
-./src/platform.o \
-./src/sd.o 
+./src/platform.o 
 
 C_DEPS += \
 ./src/ff.d \
 ./src/main.d \
 ./src/mmc.d \
-./src/platform.d \
-./src/sd.d 
+./src/platform.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
