@@ -38,11 +38,14 @@ const u8 ssd1306_init_sequence [] = {   // Initialization Sequence
     0xAF            // Display ON in normal mode
 };
 
+static const int i2c_write_delay = 300; // us
+
 // Write a command out to the specified i2c device.
 void i2c_command(XIicPs *device, u8 addr, u8 command)
 {
     const u8 buf[] = {0x80,command};
     XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
+    usleep(i2c_write_delay);
 }
 
 // Write data out to the specified i2c device.
@@ -50,6 +53,7 @@ void i2c_data(XIicPs *device, u8 addr, u8 data)
 {
     const u8 buf[] = {0x40,data};
     XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
+    usleep(i2c_write_delay);
 }
 
 // The application entry point.
@@ -150,22 +154,20 @@ int main()
     XGpioPs_SetDirectionPin(&gpio, 12, 1); 
     XGpioPs_SetOutputEnablePin(&gpio, 12, 1);
     XGpioPs_WritePin(&gpio, 12, 0);
-    usleep(2500);
+    usleep(300);
     XGpioPs_WritePin(&gpio, 12, 1);
-    usleep(2500);
+    usleep(300);
 
     // Write out the oled initialization sequence.
     printf("oled initialization sequence\n");
     int i;
     for (i = 0; i < sizeof(ssd1306_init_sequence)/sizeof(*ssd1306_init_sequence); ++i) {
        i2c_command(&oled, 0x3c, ssd1306_init_sequence[i]); 
-       usleep(2500);
     }
 
     // Display the inspire logo.
     for (i = 0; i < sizeof(Inspire)/sizeof(*Inspire); ++i) {
         i2c_data(&oled, 0x3c, Inspire[i]);
-        usleep(2500);
     }
 
     return 0;
