@@ -56,6 +56,18 @@ void i2c_data(XIicPs *device, u8 addr, u8 data)
     usleep(i2c_write_delay);
 }
 
+// Display a character on the device.
+// Map the character onto the font index, and then write the font data out.
+void display_character(XIicPs *device, u8 addr, char c)
+{
+    const int index = (5 * ((int)c - ' '));
+
+    int i;
+    for (i = 0; i < 5; ++i) {
+        i2c_data(device, addr, Font5x7[index+i]);
+    }
+}
+
 // The application entry point.
 int main()
 {
@@ -165,9 +177,24 @@ int main()
        i2c_command(&oled, 0x3c, ssd1306_init_sequence[i]); 
     }
 
-    // Display the inspire logo.
+    // Display the inspire logo, then give some time to admire.
+    printf("flashing logo\n");
     for (i = 0; i < sizeof(Inspire)/sizeof(*Inspire); ++i) {
         i2c_data(&oled, 0x3c, Inspire[i]);
+    }
+    sleep(5);
+
+    // Blank the display, and then test character display.
+    printf("blanking display\n");
+    for (i = 0; i < sizeof(Inspire)/sizeof(*Inspire); ++i) {
+        i2c_data(&oled, 0x3c, 0);
+    }
+
+    printf("character display test\n");
+    char c;
+    for (c = ' '; c <= '}'; ++c) {
+        display_character(&oled, 0x3c, c);
+        usleep(2500);
     }
 
     return 0;
