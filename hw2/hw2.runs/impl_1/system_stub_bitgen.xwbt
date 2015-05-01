@@ -1,0 +1,8 @@
+INTSTYLE=pa
+INFILE=C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.runs\impl_1\system_stub_routed.ncd
+OUTFILE=C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.runs\impl_1\system_stub.bit
+FAMILY=Zynq
+PART=xc7z020-1clg484
+WORKINGDIR=C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.runs\impl_1
+LICENSE=ISE
+USER_INFO=174120069_1777487858_210578159_224

@@ -1,0 +1,12 @@
+
+<RENDERBATCH>
+
+  <RENDERIMG RASNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\processing_system7_0.jpg" SVGNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\processing_system7_0.svg" TMPSVGFN="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.srcs\sources_1\edk\system\__xps\.dswkshop\processing_system7_0.svg"/>
+
+  <RENDERIMG RASNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\axi_gpio_0.jpg" SVGNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\axi_gpio_0.svg" TMPSVGFN="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.srcs\sources_1\edk\system\__xps\.dswkshop\axi_gpio_0.svg"/>
+
+  <RENDERIMG RASNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\axi_interconnect_1.jpg" SVGNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\axi_interconnect_1.svg" TMPSVGFN="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.srcs\sources_1\edk\system\__xps\.dswkshop\axi_interconnect_1.svg"/>
+
+  <RENDERIMG RASNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\system_blkd.jpg" SVGNAME="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.sdk\SDK\SDK_Export\hw\imgs\system_blkd.svg" TMPSVGFN="C:\cygwin64\home\jemele\src\wes237a\hw2\hw2.srcs\sources_1\edk\system\__xps\.dswkshop\system_blkd.svg"/>
+
+</RENDERBATCH>
