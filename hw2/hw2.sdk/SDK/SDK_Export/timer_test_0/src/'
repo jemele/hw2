@@ -1,0 +1,89 @@
+// Joshua Emele <jemele@acm.org>
+#include <stdio.h>
+#include "platform.h"
+#include <xscugic.h>
+#include <xil_exception.h>
+#include <xttcps.h>
+
+// A struct to contain all relevant ttc options.
+typedef struct
+{
+    u32 hz;
+    u16 interval;
+    u8 prescalar;
+    u16 options;
+
+} ttc_config_t;
+
+
+// The application entry point.
+int main()
+{
+    init_platform();
+
+    printf("Hello World\n\r");
+
+    printf("gpio initialization\n");
+    XGpioPs gpio;
+    status = XGpioPs_CfgInitialize(&gpio, gpio_config, gpio_config->BaseAddr);
+    if (status != XST_SUCCESS) {
+        printf("XGpioPs_CfgInitialize failed %d\n", status);
+        return status;
+    }
+    usleep(25);
+
+    printf("gpio selftest\n");
+    status = XGpioPs_SelfTest(&gpio);
+    if (status != XST_SUCCESS) {
+        printf("XGpioPs_SelfTest %d\n", status);
+        return status;
+    }
+    usleep(25);
+
+    // Turn on mio7 led - we'll toggle this with the timer interrupt.
+    XGpioPs_SetDirectionPin(&gpio, 7, 1); 
+    XGpioPs_SetOutputEnablePin(&gpio, 7, 1);
+    XGpioPs_WritePin(&gpio, 7, 1);
+ 
+    // Initialize ttc.
+    XTtcPs_Config *ttc0_config = XTtcPs_LookupConfig(XPAR_PS7_TTC_0_DEVICE_ID);
+    if (!ttc0_config) {
+        printf("XTtcPs_LookupConfig failed\n");
+        return XST_FAILURE;
+    }    
+
+    printf("initializing ttc0\n");
+    XTtcPs ttc0;
+    int status = XTtcPs_CfgInitialize(&ttc0, ttc0_config, ttc0_config->BaseAddress);
+    if (status != XST_SUCCESS) {
+        printf("XTtcPs_CfgInitialize failed %d\n", status);
+        return status;
+    }
+
+    ttc_config_t ttc0_setup = {
+        1, // Hz
+        0,
+        0,
+        XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE
+    };
+    printf("ttc0 setting options\n");
+    status = XTtcPs_SetOptions(&ttc0, ttc0_setup.options);
+    if (status != XST_SUCCESS) {
+        printf("XTtcPs_SetOptions failed %d\n", status);
+        return status;
+    }
+
+    printf("ttc0 calculating interval\n");
+    status = XTtcPs_CalcIntervalFromFreq(&ttc0, ttc0_setup.hz,
+        &ttc0_setup.interval, &tcc0_setup.prescalar);
+    if (status != XST_SUCCESS) {
+        printf("XTtcPs_CalcIntervalFromFreq failed %d\n", status);
+        return status;
+    }
+
+    printf("ttc0 setting interval\n");
+    status = XTtcPs_SetInterval(&ttc0, ttc0_setup.interval);
+    if (status != XST_SUCCESS) {
+    }
+    return 0;
+}
