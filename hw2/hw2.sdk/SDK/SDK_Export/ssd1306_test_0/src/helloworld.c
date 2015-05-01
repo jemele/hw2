@@ -41,7 +41,7 @@ const u8 ssd1306_init_sequence [] = {   // Initialization Sequence
 // Write a command out to the specified i2c device. 
 void i2c_command(XIicPs *device, u8 addr, u8 command)
 {
-	const u8 buf[] = {0x80,command};
+    const u8 buf[] = {0x80,command};
     XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
 }
 
