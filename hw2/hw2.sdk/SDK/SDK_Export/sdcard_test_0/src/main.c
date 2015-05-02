@@ -660,10 +660,16 @@ int main()
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
+    i = 0;
     while (!terminate && !watchdog_terminate) {
         wdt_sleep_ms(&wdt, display_update_delay_ms);
 
+        // Line wrap the console progress indicator.
         putchar('.');
+        if (++i > 80) {
+            putchar('\n');
+            i = 0;
+        }
         fflush(stdout);
     }
     return 0;
