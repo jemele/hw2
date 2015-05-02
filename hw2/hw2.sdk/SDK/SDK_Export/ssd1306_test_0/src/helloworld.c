@@ -57,15 +57,25 @@ void i2c_data(XIicPs *device, u8 addr, u8 data)
     usleep(i2c_write_delay);
 }
 
+// A font descriptor.
+typedef struct {
+    const u8 * base;
+    char start;
+    int width;
+    int pad;
+} font_t;
+
 // Display a character on the device.
 // Map the character onto the font index, and then write the font data out.
-void display_character(XIicPs *device, u8 addr, char c)
+void display_character(XIicPs *device, u8 addr, char c, const font_t * f)
 {
-    const int index = (5 * ((int)c - ' '));
-
+    const int index = (f->width * (c - f->start));
     int i;
-    for (i = 0; i < 5; ++i) {
-        i2c_data(device, addr, Font5x7[index+i]);
+    for (i = 0; i < f->width; ++i) {
+        i2c_data(device, addr, f->base[index+i]);
+    }
+    for (i = 0; i < f->pad; ++i) {
+        i2c_data(device, addr, 0);
     }
 }
 
@@ -164,10 +174,17 @@ int main()
         i2c_data(&oled, oled_addr, 0);
     }
 
+    // Tailor the font to the display.
+    const font_t font = {
+        .base = Font5x7,
+        .start = ' ',
+        .width = 5,
+        .pad = 128%5
+    };
     printf("character display test\n");
     char c;
     for (c = ' '; c <= '}'; ++c) {
-        display_character(&oled, oled_addr, c);
+        display_character(&oled, oled_addr, c, &font);
         usleep(2500);
     }
 
