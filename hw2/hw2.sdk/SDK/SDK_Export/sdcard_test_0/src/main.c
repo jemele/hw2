@@ -177,7 +177,7 @@ static void ttc1_isr(void *context)
 // The terminate flag. If set, the program should terminate.
 volatile int terminate = 0;
 volatile int display_update_delay_ms = 250;
-static const int display_update_minimum_delay_ms = 250;
+static const int display_update_minimum_delay_ms = 50;
 
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
@@ -206,13 +206,11 @@ static void buttons_isr(void *context)
 
     // Increase the display update delay.
     case button_up:
-        printf("up\n");
         display_update_delay_ms += display_update_minimum_delay_ms;
         break;
 
     // Decrease the display update delay.
     case button_down:
-        printf("down\n");
         if (display_update_delay_ms > display_update_minimum_delay_ms) {
             display_update_delay_ms -= display_update_minimum_delay_ms;
         }
@@ -220,7 +218,7 @@ static void buttons_isr(void *context)
 
     // Terminate the application.
     case button_center:
-        printf("center\n");
+        printf("terminate\n");
         terminate = 1;
         break;
 
@@ -663,13 +661,10 @@ int main()
 
     // Run until told to die.
     while (!terminate && !watchdog_terminate) {
-
         wdt_sleep_ms(&wdt, display_update_delay_ms);
 
-        status = XScuWdt_ReadReg(wdt.config->BaseAddr,
-                XSCUWDT_COUNTER_OFFSET);
-
-        printf("main loop %u\n", status);
+        putchar('.');
+        fflush(stdout);
     }
     return 0;
 }
