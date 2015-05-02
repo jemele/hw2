@@ -552,6 +552,54 @@ static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
     return 0;
 }
 
+// Read a space delimited word from the specified file.
+// If the file is exhausted before a word is found, wrap.
+// If the buffer is exhausted, return.
+static int read_word(FIL *fil, char *buffer, int buffer_size, int *word_size)
+{
+    *word_size = 0;
+
+    char c;
+    int i = 0, status;
+    unsigned bytes_read;
+    while (i < buffer_size) {
+
+        // If the file is exhausted, seek to the beginning.
+        if (f_eof(fil)) {
+            status = f_lseek(fil, 0);
+            if (status != FR_OK) {
+                printf("f_lseek failed %d\n", status);
+                return status;
+            }
+        }
+        status = f_read(fil, &c, 1, &bytes_read);
+        if (status || !bytes_read) {
+            printf("f_read failed %d\n", status);
+            return status;
+        }
+
+        // We only care about ascii.
+        c &= 0x7f;
+
+        // Map newline to strings, since we ignore control characters.
+        if (c == '\n') {
+            c = ' ';
+        }
+        if (iscntrl((int)c)) {
+            continue;
+        }
+        if (isspace((int)c)) {
+            if (i) {
+                break;
+            }
+            continue;
+        }
+        buffer[i++] = c;
+    }
+    *word_size = i;
+    return 0;
+}
+
 // The application entry point.
 int main()
 {
@@ -681,33 +729,25 @@ int main()
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
-    char buffer;
-    unsigned bytes_read;
+    int word_size = 0;
+    char word_buffer[32];
     while (!terminate && !watchdog_terminate) {
         wdt_sleep_ms(&wdt, display_update_delay_ms);
 
-        // Read file data and display.
-        // If the file is exhausted, seek to the beginning.
-        if (f_eof(&fil)) {
-            status = f_lseek(&fil, 0);
-            if (status != FR_OK) {
-                printf("f_lseek failed %d\n", status);
-                return status;
-            }
-        }
-        status = f_read(&fil, &buffer, 1, &bytes_read);
-        if (status != FR_OK) {
-            printf("f_read failed %d\n", status);
+        // If we've exhausted the word buffer, read a new word.
+        // Note: A pathological file that contains only spaces will trip the
+        // watchdog.
+        status = read_word(&fil, word_buffer, sizeof(word_buffer),
+                &word_size);
+        if (status) {
+            printf("read_word failed %d\n", status);
             return status;
         }
-        putchar(buffer);
-        fflush(stdout);
-
-        // Display newlines as spaces.
-        if (buffer == '\n') {
-            buffer = ' ';
+        for (i = 0; i < word_size; ++i) {
+            printf("%c", word_buffer[i]);
         }
-        display_character(&oled.device, oled_addr, buffer, &font);
+        printf("\n");
+        //display_character(&oled.device, oled_addr, buffer, &font);
     }
     return 0;
 }
