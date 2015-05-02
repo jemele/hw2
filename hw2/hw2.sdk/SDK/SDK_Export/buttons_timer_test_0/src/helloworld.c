@@ -24,6 +24,22 @@ typedef struct {
 
 } ttc_t;
 
+// Set the ttc frequency specified in the driver context.
+// Note that the calculation can fail: Upon unsuccessful calculation, Interval
+// and Prescaler are set to 0xFF(FF) for their maximum values to signal the
+// caller of failure.
+static int ttc_set_frequency(ttc_t *ttc)
+{
+    XTtcPs_CalcIntervalFromFreq(&ttc->device, ttc->frequency_hz,
+        &ttc->interval, &ttc->prescalar);
+    if ((~ttc->interval | ~ttc->prescalar) == 0) {
+        return XST_FAILURE;
+    }
+    XTtcPs_SetInterval(&ttc->device, ttc->interval);
+    XTtcPs_SetPrescaler(&ttc->device, ttc->prescalar);
+    return 0;
+}
+
 // The ttc0 interrupt service routine.
 static void ttc0_isr(void *context)
 {
@@ -181,15 +197,12 @@ static int initialize_ttc(XScuGic *gic, ttc_t *ttc)
         return status;
     }
 
-    printf("ttc calculating interval\n");
-    XTtcPs_CalcIntervalFromFreq(&ttc->device, ttc->frequency_hz,
-        &ttc->interval, &ttc->prescalar);
-
-    printf("ttc setting interval\n");
-    XTtcPs_SetInterval(&ttc->device, ttc->interval);
-
-    printf("ttc setting prescalar\n");
-    XTtcPs_SetPrescaler(&ttc->device, ttc->prescalar);
+    printf("setting ttc frequency\n");
+    status = ttc_set_frequency(ttc);
+    if (status != XST_SUCCESS) {
+        printf("ttc_set_frequency failed %d\n", status);
+        return status;
+    }
 
     // Configure individual interrupt sources.
     // Begin by initializing the ttc0 interrupt.
