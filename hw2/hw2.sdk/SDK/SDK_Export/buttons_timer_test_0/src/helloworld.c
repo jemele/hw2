@@ -2,11 +2,117 @@
 #include <stdio.h>
 #include "platform.h"
 #include <xscugic.h>
+#include <xiicps.h>
 #include <xil_exception.h>
 #include <xttcps.h>
 #include <xgpio.h>
 #include <xgpiops.h>
 #include <sleep.h>
+#include "font_5x7.h"
+
+// ssd1306 initialization sequence, derived from:
+// https://github.com/Defragster/ssd1306xled/blob/master/ssd1306xled.cpp
+const u8 ssd1306_init[] = {
+    0xAE,           // Display OFF (sleep mode)
+    0x20, 0b00,     // Set Memory Addressing Mode
+                    // 00=Horizontal Addressing Mode; 01=Vertical Addressing Mode;
+                    // 10=Page Addressing Mode (RESET); 11=Invalid
+    0xB0,           // Set Page Start Address for Page Addressing Mode, 0-7
+    0xC8,           // Set COM Output Scan Direction
+    0x00,           // ---set low column address
+    0x10,           // ---set high column address
+    0x40,           // --set start line address
+    0x81, 0x3F,     // Set contrast control register
+    0xA1,           // Set Segment Re-map. A0=address mapped; A1=address 127 mapped.
+    0xA6,           // Set display mode. A6=Normal; A7=Inverse
+    0xA8, 0x3F,     // Set multiplex ratio(1 to 64)
+    0xA4,           // Output RAM to Display
+                    // 0xA4=Output follows RAM content; 0xA5,Output ignores RAM content
+    0xD3, 0x00,     // Set display offset. 00 = no offset
+    0xD5,           // --set display clock divide ratio/oscillator frequency
+    0xF0,           // --set divide ratio
+    0xD9, 0x22,     // Set pre-charge period
+    0xDA, 0x12,     // Set com pins hardware configuration
+    0xDB,           // --set vcomh
+    0x20,           // 0x20,0.77xVcc
+    0x8D, 0x14,     // Set DC-DC enable
+    0xAF            // Display ON in normal mode
+};
+static const u8 oled_addr = 0x3c;
+static const int i2c_write_delay = 300; // us
+
+// Write a command out to the specified i2c device.
+void i2c_command(XIicPs *device, u8 addr, u8 command)
+{
+    const u8 buf[] = {0x80,command};
+    XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
+    usleep(i2c_write_delay);
+}
+
+// Write data out to the specified i2c device.
+void i2c_data(XIicPs *device, u8 addr, u8 data)
+{
+    const u8 buf[] = {0x40,data};
+    XIicPs_MasterSend(device, (u8*)buf, sizeof(buf), addr);
+    usleep(i2c_write_delay);
+}
+
+// A font descriptor.
+typedef struct {
+    const u8 * base;
+    char start;
+    int width;
+    int pad;
+} font_t;
+
+// An i2c device context.
+typedef struct {
+    int id;
+    int clock;
+    int clear_options;
+    int options;
+
+    XIicPs_Config *config;
+    XIicPs device;
+} i2c_t;
+
+// Initialize an i2c device.
+static int initialize_i2c(i2c_t *i2c)
+{
+    i2c->config = XIicPs_LookupConfig(i2c->id); //XPAR_PS7_I2C_0_DEVICE_ID);
+    if (!i2c->config) {
+        printf("XIicPs_LookupConfig failed\n");
+        return XST_FAILURE;
+    }
+    printf("i2c initialization\n");
+    int status = XIicPs_CfgInitialize(&i2c->device, i2c->config,
+            i2c->config->BaseAddress);
+    if (status != XST_SUCCESS) {
+        printf("XIicPs_CfgInitialize failed %d\n", status);
+        return status;
+    }
+    status = XIicPs_SelfTest(&i2c->device);
+    if (status != XST_SUCCESS) {
+        printf("XIicPs_SelfTest failed %d\n", status);
+        return status;
+    }
+    status = XIicPs_SetSClk(&i2c->device, i2c->clock); //100000);
+    if (status != XST_SUCCESS) {
+        printf("XIicPs_SetSClk failed %d\n", status);
+        return status;
+    }
+    status = XIicPs_ClearOptions(&i2c->device, i2c->clear_options);//XIICPS_10_BIT_ADDR_OPTION);
+    if (status != XST_SUCCESS) {
+        printf("XIicPs_ClearOptions failed %d\n", status);
+        return status;
+    }
+    status = XIicPs_SetOptions(&i2c->device, i2c->options);//XIICPS_7_BIT_ADDR_OPTION);
+    if (status != XST_SUCCESS) {
+        printf("XIicPs_SetOptions failed %d\n", status);
+        return status;
+    }
+    return 0;
+}
 
 // The ttc driver struct.
 typedef struct {
@@ -279,8 +385,21 @@ int main()
 
     printf("Hello world\n");
 
+    int status;
+
+    i2c_t oled = {
+        .id = XPAR_PS7_I2C_0_DEVICE_ID,
+        .clock = 100000,
+        .clear_options = XIICPS_10_BIT_ADDR_OPTION,
+        .options = XIICPS_7_BIT_ADDR_OPTION,
+    };
+    status = initialize_i2c(&oled);
+    if (status) {
+        printf("initialize_i2c failed %d\n", status);
+        return status;
+    }
     XGpioPs gpio;
-    int status = initialize_gpio(&gpio);
+    status = initialize_gpio(&gpio);
     if (status) {
         printf("intialize_gpio failed %d\n", status);
         return status;
