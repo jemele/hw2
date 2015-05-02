@@ -176,6 +176,8 @@ static void ttc1_isr(void *context)
 
 // The terminate flag. If set, the program should terminate.
 volatile int terminate = 0;
+volatile int display_update_delay_ms = 250;
+static const int display_update_minimum_delay_ms = 250;
 
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
@@ -201,21 +203,32 @@ static void buttons_isr(void *context)
     // read the button state and respond.
     const int state = XGpio_DiscreteRead(buttons, 1);
     switch (state) {
+
+    // Increase the display update delay.
     case button_up:
         printf("up\n");
+        display_update_delay_ms += display_update_minimum_delay_ms;
         break;
+
+    // Decrease the display update delay.
+    case button_down:
+        printf("down\n");
+        if (display_update_delay_ms > display_update_minimum_delay_ms) {
+            display_update_delay_ms -= display_update_minimum_delay_ms;
+        }
+        break;
+
+    // Terminate the application.
+    case button_center:
+        printf("center\n");
+        terminate = 1;
+        break;
+
     case button_right:
         printf("right\n");
         break;
     case button_left:
         printf("left\n");
-        break;
-    case button_down:
-        printf("down\n");
-        break;
-    case button_center:
-        printf("center\n");
-        terminate = 1;
         break;
     }
     XGpio_InterruptClear(buttons, XGPIO_IR_CH1_MASK);
@@ -478,10 +491,16 @@ static int wdt_sleep_us(wdt_t *wdt, int us)
     }
     return watchdog_terminate;
 }
+static int wdt_sleep_ms(wdt_t *wdt, int ms)
+{
+    return wdt_sleep_us(wdt, ms*1000);
+}
+#if 0
 static int wdt_sleep_s(wdt_t *wdt, int s)
 {
     return wdt_sleep_us(wdt, s*1000000);
 }
+#endif
 
 // Initialize the watchdog.
 static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
@@ -645,7 +664,7 @@ int main()
     // Run until told to die.
     while (!terminate && !watchdog_terminate) {
 
-        wdt_sleep_s(&wdt, 1);
+        wdt_sleep_ms(&wdt, display_update_delay_ms);
 
         status = XScuWdt_ReadReg(wdt.config->BaseAddr,
                 XSCUWDT_COUNTER_OFFSET);
