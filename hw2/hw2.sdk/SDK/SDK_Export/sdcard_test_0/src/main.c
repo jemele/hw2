@@ -580,13 +580,6 @@ int main()
     ssd1306_reset(&oled, &gpio, oled_reset_pin);
     ssd1306_clear(&oled);
 
-    printf("character display test\n");
-    char c;
-    for (c = ' '; c <= '}'; ++c) {
-        display_character(&oled.device, oled_addr, c, &font);
-        usleep(2500);
-    }
-
     XScuGic gic;
     status = initialize_gic(&gic);
     if (status) {
@@ -681,7 +674,6 @@ int main()
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
-    i = 0;
     char buffer;
     unsigned bytes_read;
     while (!terminate && !watchdog_terminate) {
@@ -701,13 +693,10 @@ int main()
             printf("f_read failed %d\n", status);
             return status;
         }
+        display_character(&oled.device, oled_addr, buffer, &font);
 
         // Line wrap the console progress indicator.
         putchar(buffer);
-        if (++i > 80) {
-            putchar('\n');
-            i = 0;
-        }
         fflush(stdout);
     }
     return 0;
