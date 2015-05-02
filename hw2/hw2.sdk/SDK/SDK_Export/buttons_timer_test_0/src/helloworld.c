@@ -38,6 +38,28 @@ typedef struct {
     int pad;
 } font_t;
 
+// Tailor the font to the display.
+const font_t font = {
+    .base = Font5x7,
+    .start = ' ',
+    .width = 5,
+    .pad = 128%5
+};
+
+// Display a character on the device.
+// Map the character onto the font index, and then write the font data out.
+void display_character(XIicPs *device, u8 addr, char c, const font_t * f)
+{
+    const int index = (f->width * (c - f->start));
+    int i;
+    for (i = 0; i < f->width; ++i) {
+        i2c_data(device, addr, f->base[index+i]);
+    }
+    for (i = 0; i < f->pad; ++i) {
+        i2c_data(device, addr, 0);
+    }
+}
+
 // An i2c device context.
 typedef struct {
     int id;
@@ -433,6 +455,13 @@ int main()
     }
     ssd1306_reset(&oled, &gpio, oled_reset_pin);
     ssd1306_clear(&oled);
+
+    printf("character display test\n");
+    char c;
+    for (c = ' '; c <= '}'; ++c) {
+        display_character(&oled.device, oled_addr, c, &font);
+        usleep(2500);
+    }
 
     XScuGic gic;
     status = initialize_gic(&gic);
