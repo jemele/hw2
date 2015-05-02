@@ -40,6 +40,7 @@ void i2c_data(XIicPs *device, u8 addr, u8 data)
 // A font descriptor.
 typedef struct {
     const u8 * base;
+    int size;
     char start;
     int width;
     int pad;
@@ -48,6 +49,7 @@ typedef struct {
 // Tailor the font to the display.
 const font_t font = {
     .base = Font5x7,
+    .size = sizeof(Font5x7),
     .start = ' ',
     .width = 5,
     .pad = 128%5
@@ -55,9 +57,14 @@ const font_t font = {
 
 // Display a character on the device.
 // Map the character onto the font index, and then write the font data out.
-void display_character(XIicPs *device, u8 addr, char c, const font_t * f)
+// Do not display invalid characters.
+void display_character(XIicPs *device, u8 addr, char c, const font_t *f)
 {
     const int index = (f->width * (c - f->start));
+    if ((index < 0) || (index >= f->size)) {
+        return;
+    }
+
     int i;
     for (i = 0; i < f->width; ++i) {
         i2c_data(device, addr, f->base[index+i]);
