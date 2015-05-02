@@ -10,6 +10,7 @@
 #include <xgpiops.h>
 #include <xscuwdt.h>
 #include <sleep.h>
+#include <xtime_l.h>
 #include "font_5x7.h"
 
 static const u8 oled_addr = 0x3c;
@@ -453,6 +454,35 @@ static void wdt_isr(void *context)
     watchdog_terminate = 1;
 }
 
+// Sleep arbitrarily while petting the dog.
+// Returns non-zero if the watchdog fired while delaying.
+static int wdt_sleep_us(wdt_t *wdt, int us)
+{
+    static const int time_per_us = COUNTS_PER_SECOND/1000000;
+    const int threshold = us * time_per_us;
+
+    XTime start_time, current_time;
+    XTime_GetTime(&start_time);
+
+    while (!watchdog_terminate) {
+
+        // Keep the watchdog from terminating the program.
+        XScuWdt_LoadWdt(&wdt->device, wdt->value);
+
+        // Continue to sample and wait until the requested time has elapsed.
+        XTime_GetTime(&current_time);
+        const int elapsed_time = current_time - start_time;
+        if (elapsed_time >= threshold) {
+            break;
+        }
+    }
+    return watchdog_terminate;
+}
+static int wdt_sleep_s(wdt_t *wdt, int s)
+{
+    return wdt_sleep_us(wdt, s*1000000);
+}
+
 // Initialize the watchdog.
 static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
 {
@@ -613,17 +643,14 @@ int main()
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
-    i = 0;
     while (!terminate && !watchdog_terminate) {
 
-        // Keep the watchdog from terminating the program.
-        usleep(100500);
+        wdt_sleep_s(&wdt, 1);
 
         status = XScuWdt_ReadReg(wdt.config->BaseAddr,
                 XSCUWDT_COUNTER_OFFSET);
 
         printf("main loop %u\n", status);
-        XScuWdt_LoadWdt(&wdt.device, wdt.value);
     }
     return 0;
 }
