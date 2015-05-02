@@ -13,6 +13,7 @@ typedef struct {
     int id;
     int interrupt;
     Xil_ExceptionHandler isr;
+    void *isr_context;
     u32 frequency_hz;
     u16 options;
 
@@ -34,7 +35,7 @@ static void ttc0_isr(void *context)
     XTtcPs_ClearInterruptStatus(&ttc->device, status);
 }
 
-// The ttc0 interrupt service routine.
+// The timer1 interrupt service routine, which toggles led mio7.
 static void ttc1_isr(void *context)
 {
     if (!context) {
@@ -43,6 +44,14 @@ static void ttc1_isr(void *context)
     ttc_t *ttc = (ttc_t*)context;
     const int status = XTtcPs_GetInterruptStatus(&ttc->device);
     XTtcPs_ClearInterruptStatus(&ttc->device, status);
+
+    const int pin = 7;
+    XGpioPs *gpio = ttc->isr_context;
+    if (!gpio) {
+        return;
+    }
+    const int pin_state = XGpioPs_ReadPin(gpio, pin);
+    XGpioPs_WritePin(gpio, pin, !pin_state);
 }
 
 // The buttons interrupt service routine.
@@ -269,6 +278,7 @@ int main()
         printf("initialize_gic failed %d\n", status);
         return status;
     }
+
     ttc_t timers[] = {
         {
             .id = XPAR_PS7_TTC_0_DEVICE_ID,
@@ -277,10 +287,12 @@ int main()
             .frequency_hz = 1,
             .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
         },
+        // Timer1, which toggles led mio7 at 5Hz.
         {
             .id = XPAR_PS7_TTC_1_DEVICE_ID,
             .interrupt = XPS_TTC0_1_INT_ID,
             .isr = ttc1_isr,
+            .isr_context = &gpio,
             .frequency_hz = 5,
             .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
         },
