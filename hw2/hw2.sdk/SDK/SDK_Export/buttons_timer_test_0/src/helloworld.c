@@ -171,6 +171,9 @@ static void ttc1_isr(void *context)
     XGpioPs_WritePin(gpio, pin, !pin_state);
 }
 
+// The terminate flag. If set, the program should terminate.
+volatile int terminate = 0;
+
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
 {
@@ -209,6 +212,7 @@ static void buttons_isr(void *context)
         break;
     case button_center:
         printf("center\n");
+        terminate = 1;
         break;
     }
     XGpio_InterruptClear(buttons, XGPIO_IR_CH1_MASK);
@@ -506,7 +510,8 @@ int main()
     }
     enable_gic_interrupts(&gic);
 
-    // Run forever.
-    while (1) {}
+    // Run until told to die.
+    printf("press the center button to exit\n");
+    while (!terminate) {}
     return 0;
 }
