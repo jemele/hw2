@@ -8,8 +8,7 @@
 #include <xgpiops.h>
 #include <sleep.h>
 
-// http://forums.xilinx.com/t5/Xcell-Daily-Blog/Introduction-to-the-Zynq-Triple-Timer-Counter-Part-Three-Adam/ba-p/413105
-// A struct to contain all relevant ttc options.
+// The ttc driver struct.
 typedef struct {
     int id;
     int interrupt;
@@ -25,10 +24,21 @@ typedef struct {
 } ttc_t;
 
 // The ttc0 interrupt service routine.
-// For now, toggle MIO7.
 static void ttc0_isr(void *context)
 {
     printf("ttc0 isr\n");
+    if (!context) {
+        return;
+    }
+    ttc_t *ttc = (ttc_t*)context;
+    const int status = XTtcPs_GetInterruptStatus(&ttc->device);
+    XTtcPs_ClearInterruptStatus(&ttc->device, status);
+}
+
+// The ttc0 interrupt service routine.
+static void ttc1_isr(void *context)
+{
+    printf("ttc1 isr\n");
     if (!context) {
         return;
     }
@@ -104,7 +114,7 @@ static int initialize_gic(XScuGic *gic)
 
 // Initialize ttc0.
 // This will configure and enable interrupts for the device.
-static int initialize_ttc0(XScuGic *gic, ttc_t *ttc)
+static int initialize_ttc(XScuGic *gic, ttc_t *ttc)
 {
     ttc->config = XTtcPs_LookupConfig(ttc->id);
     if (!ttc->config) {
@@ -181,7 +191,7 @@ static int initialize_axi_gpio(XScuGic *gic, XGpio *buttons)
 
     printf("connect buttons interrupt handler\n");
     status = XScuGic_Connect(gic, XPAR_FABRIC_GPIO_0_VEC_ID,
-        (Xil_ExceptionHandler)buttons_isr, buttons);
+        buttons_isr, buttons);
     if (status != XST_SUCCESS) {
         printf("XScuGic_Connect failed %d\n", status);
         return status;
@@ -229,18 +239,32 @@ int main()
         printf("initialize_gic failed %d\n", status);
         return status;
     }
-    ttc_t ttc0 = {
-        .id = XPAR_PS7_TTC_0_DEVICE_ID,
-        .interrupt = XPS_TTC0_0_INT_ID,
-        .isr = ttc0_isr,
-        .frequency_hz = 1,
-        .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
+    ttc_t timers[] = {
+        {
+            .id = XPAR_PS7_TTC_0_DEVICE_ID,
+            .interrupt = XPS_TTC0_0_INT_ID,
+            .isr = ttc0_isr,
+            .frequency_hz = 1,
+            .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
+        },
+        {
+            .id = XPAR_PS7_TTC_1_DEVICE_ID,
+            .interrupt = XPS_TTC0_1_INT_ID,
+            .isr = ttc1_isr,
+            .frequency_hz = 5,
+            .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
+        },
     };
-    status = initialize_ttc0(&gic, &ttc0);
-    if (status) {
-        printf("initialize_ttc0 failed %d\n", status);
-        return status;
+
+    int i;
+    for (i = 0; i < sizeof(timers)/sizeof(*timers); ++i) {
+        status = initialize_ttc(&gic, &timers[i]);
+        if (status) {
+            printf("initialize_ttc failed %d\n", status);
+            return status;
+        }
     }
+
     XGpio buttons;
     status = initialize_axi_gpio(&gic, &buttons);
     if (status) {
