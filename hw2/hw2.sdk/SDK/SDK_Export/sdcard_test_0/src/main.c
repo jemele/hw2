@@ -700,11 +700,14 @@ int main()
             printf("f_read failed %d\n", status);
             return status;
         }
-        display_character(&oled.device, oled_addr, buffer, &font);
-
-        // Line wrap the console progress indicator.
         putchar(buffer);
         fflush(stdout);
+
+        // Display newlines as spaces.
+        if (buffer == '\n') {
+            buffer = ' ';
+        }
+        display_character(&oled.device, oled_addr, buffer, &font);
     }
     return 0;
 }
