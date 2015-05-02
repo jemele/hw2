@@ -10,35 +10,8 @@
 #include <sleep.h>
 #include "font_5x7.h"
 
-// ssd1306 initialization sequence, derived from:
-// https://github.com/Defragster/ssd1306xled/blob/master/ssd1306xled.cpp
-const u8 ssd1306_init[] = {
-    0xAE,           // Display OFF (sleep mode)
-    0x20, 0b00,     // Set Memory Addressing Mode
-                    // 00=Horizontal Addressing Mode; 01=Vertical Addressing Mode;
-                    // 10=Page Addressing Mode (RESET); 11=Invalid
-    0xB0,           // Set Page Start Address for Page Addressing Mode, 0-7
-    0xC8,           // Set COM Output Scan Direction
-    0x00,           // ---set low column address
-    0x10,           // ---set high column address
-    0x40,           // --set start line address
-    0x81, 0x3F,     // Set contrast control register
-    0xA1,           // Set Segment Re-map. A0=address mapped; A1=address 127 mapped.
-    0xA6,           // Set display mode. A6=Normal; A7=Inverse
-    0xA8, 0x3F,     // Set multiplex ratio(1 to 64)
-    0xA4,           // Output RAM to Display
-                    // 0xA4=Output follows RAM content; 0xA5,Output ignores RAM content
-    0xD3, 0x00,     // Set display offset. 00 = no offset
-    0xD5,           // --set display clock divide ratio/oscillator frequency
-    0xF0,           // --set divide ratio
-    0xD9, 0x22,     // Set pre-charge period
-    0xDA, 0x12,     // Set com pins hardware configuration
-    0xDB,           // --set vcomh
-    0x20,           // 0x20,0.77xVcc
-    0x8D, 0x14,     // Set DC-DC enable
-    0xAF            // Display ON in normal mode
-};
 static const u8 oled_addr = 0x3c;
+static const int oled_reset_pin = 12;
 static const int i2c_write_delay = 300; // us
 
 // Write a command out to the specified i2c device.
@@ -378,6 +351,60 @@ static void enable_gic_interrupts(XScuGic *gic)
     Xil_ExceptionEnable();
 }
 
+// Initialize the display.
+static void ssd1306_reset(i2c_t *i2c, XGpioPs *gpio, int reset_pin)
+{
+    printf("initializing ssd1306\n");
+    XGpioPs_SetDirectionPin(gpio, reset_pin, 1);
+    XGpioPs_SetOutputEnablePin(gpio, reset_pin, 1);
+    XGpioPs_WritePin(gpio, reset_pin, 0);
+    usleep(300);
+    XGpioPs_WritePin(gpio, reset_pin, 1);
+
+    // ssd1306 initialization sequence, derived from:
+    // https://github.com/Defragster/ssd1306xled/blob/master/ssd1306xled.cpp
+    const u8 seq[] = {
+    0xAE,           // Display OFF (sleep mode)
+    0x20, 0b00,     // Set Memory Addressing Mode
+                    // 00=Horizontal Addressing Mode; 01=Vertical Addressing Mode;
+                    // 10=Page Addressing Mode (RESET); 11=Invalid
+    0xB0,           // Set Page Start Address for Page Addressing Mode, 0-7
+    0xC8,           // Set COM Output Scan Direction
+    0x00,           // ---set low column address
+    0x10,           // ---set high column address
+    0x40,           // --set start line address
+    0x81, 0x3F,     // Set contrast control register
+    0xA1,           // Set Segment Re-map. A0=address mapped; A1=address 127 mapped.
+    0xA6,           // Set display mode. A6=Normal; A7=Inverse
+    0xA8, 0x3F,     // Set multiplex ratio(1 to 64)
+    0xA4,           // Output RAM to Display
+                    // 0xA4=Output follows RAM content; 0xA5,Output ignores RAM content
+    0xD3, 0x00,     // Set display offset. 00 = no offset
+    0xD5,           // --set display clock divide ratio/oscillator frequency
+    0xF0,           // --set divide ratio
+    0xD9, 0x22,     // Set pre-charge period
+    0xDA, 0x12,     // Set com pins hardware configuration
+    0xDB,           // --set vcomh
+    0x20,           // 0x20,0.77xVcc
+    0x8D, 0x14,     // Set DC-DC enable
+    0xAF            // Display ON in normal mode
+    };
+
+    // Write out the oled initialization sequence.
+    int i;
+    for (i = 0; i < sizeof(seq)/sizeof(*seq); ++i) {
+       i2c_command(&i2c->device, oled_addr, seq[i]);
+    }
+}
+
+// Clear the display.
+static void ssd1306_clear(i2c_t *i2c) {
+    int i;
+    for (i = 0; i < (128*8); ++i) {
+        i2c_data(&i2c->device, oled_addr, 0);
+    }
+}
+
 // The application entry point.
 int main()
 {
@@ -404,6 +431,9 @@ int main()
         printf("intialize_gpio failed %d\n", status);
         return status;
     }
+    ssd1306_reset(&oled, &gpio, oled_reset_pin);
+    ssd1306_clear(&oled);
+
     XScuGic gic;
     status = initialize_gic(&gic);
     if (status) {
