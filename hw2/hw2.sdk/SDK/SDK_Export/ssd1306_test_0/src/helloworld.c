@@ -95,36 +95,26 @@ int main()
         printf("XIicPs_CfgInitialize failed %d\n", status);
         return status;
     }
-    usleep(25);
-
     status = XIicPs_SelfTest(&oled);
     if (status != XST_SUCCESS) {
         printf("XIicPs_SelfTest failed %d\n", status);
         return status;
     }
-    usleep(25);
-
     status = XIicPs_SetSClk(&oled, 100000);
     if (status != XST_SUCCESS) {
         printf("XIicPs_SetSClk failed %d\n", status);
         return status;
     }
-    usleep(25);
-
     status = XIicPs_ClearOptions(&oled, XIICPS_10_BIT_ADDR_OPTION);
     if (status != XST_SUCCESS) {
         printf("XIicPs_ClearOptions failed %d\n", status);
         return status;
     }
-    usleep(25);
-
     status = XIicPs_SetOptions(&oled, XIICPS_7_BIT_ADDR_OPTION);
     if (status != XST_SUCCESS) {
         printf("XIicPs_SetOptions failed %d\n", status);
         return status;
     }
-    usleep(25);
- 
 
     // Configure gpio and pull the oled out of reset.
     XGpioPs_Config *gpio_config =
@@ -133,8 +123,6 @@ int main()
         printf("XGpioPs_LookupConfig failed\n");
         return XST_FAILURE;
     }
-    usleep(25);
-
     printf("gpio initialization\n");
     XGpioPs gpio;
     status = XGpioPs_CfgInitialize(&gpio, gpio_config, gpio_config->BaseAddr);
@@ -142,15 +130,12 @@ int main()
         printf("XGpioPs_CfgInitialize failed %d\n", status);
         return status;
     }
-    usleep(25);
-
     printf("gpio selftest\n");
     status = XGpioPs_SelfTest(&gpio);
     if (status != XST_SUCCESS) {
         printf("XGpioPs_SelfTest %d\n", status);
         return status;
     }
-    usleep(25);
 
     printf("oled reset\n");
     XGpioPs_SetDirectionPin(&gpio, 12, 1); 
@@ -158,7 +143,6 @@ int main()
     XGpioPs_WritePin(&gpio, 12, 0);
     usleep(300);
     XGpioPs_WritePin(&gpio, 12, 1);
-    usleep(300);
 
     // Write out the oled initialization sequence.
     printf("oled initialization sequence\n");
