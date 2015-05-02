@@ -111,17 +111,6 @@ int main()
     }
     usleep(25);
 
-    // This apparently isn't needed, and currently fails with:
-    // XIicPs_GetSClk failed 99029
-#if 0
-    status = XIicPs_GetSClk(&oled);
-    if (status != XST_SUCCESS) {
-        printf("XIicPs_GetSClk failed %d\n", status);
-        return status;
-    }
-    usleep(25);
-#endif
-
     status = XIicPs_ClearOptions(&oled, XIICPS_10_BIT_ADDR_OPTION);
     if (status != XST_SUCCESS) {
         printf("XIicPs_ClearOptions failed %d\n", status);
