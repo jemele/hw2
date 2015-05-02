@@ -7,6 +7,7 @@
 #include <xttcps.h>
 #include <xgpio.h>
 #include <xgpiops.h>
+#include <xscuwdt.h>
 #include <sleep.h>
 #include "font_5x7.h"
 
@@ -431,6 +432,67 @@ static void ssd1306_clear(i2c_t *i2c) {
     }
 }
 
+// The watchdog timer driver context;
+typedef struct {
+    int id;
+    int interrupt;
+    int value;
+    Xil_ExceptionHandler isr;
+    XScuWdt_Config *config;
+    XScuWdt device;
+} wdt_t;
+
+// Used to signal the watchdog has fired.
+volatile int watchdog_terminate = 0;
+
+// The watchdog timer isr.
+static void wdt_isr(void *context)
+{
+    printf("wdt timeout\n");
+    watchdog_terminate = 1;
+}
+
+// Initialize the watchdog.
+static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
+{
+    wdt->config = XScuWdt_LookupConfig(wdt->id);
+    if (!wdt->config) {
+        printf("XScuWdt_LookupConfig failed\n");
+        return XST_FAILURE;
+    }
+    int status = XScuWdt_CfgInitialize(&wdt->device, wdt->config,
+            wdt->config->BaseAddr);
+    if (status) {
+        printf("XScuWdt_CfgInitialize failed %d\n", status);
+        return status;
+    }
+
+    // Disable the watchdog before beginning
+    status = XScuWdt_SelfTest(&wdt->device);
+    if (status) {
+        printf("XScuWdt_SelfTest failed %d\n", status);
+        return status;
+    }
+    XScuWdt_SetTimerMode(&wdt->device);
+    XScuWdt_LoadWdt(&wdt->device, wdt->value);
+
+    // Configure the wdt interrupt.
+    status = XScuGic_Connect(gic, wdt->interrupt, wdt->isr, wdt);
+    if (status) {
+        printf("XScuGic_Connect failed %d\n", status);
+        return status;
+    }
+
+    printf("enable wdt interrupts for timer mode\n");
+    int control = XScuWdt_GetControlReg(&wdt->device);
+    control |= XSCUWDT_CONTROL_IT_ENABLE_MASK;
+    XScuWdt_SetControlReg(&wdt->device, control);
+
+    printf("enable wdt interrupt\n");
+	XScuGic_Enable(gic, wdt->interrupt);
+    return 0;
+}
+
 // The application entry point.
 int main()
 {
@@ -508,10 +570,53 @@ int main()
         printf("initialize_axi_gpio failed %d\n", status);
         return status;
     }
+
+    // Configure a ~100ms watchdog timer given the current system.
+    wdt_t wdt = {
+        .id = XPAR_PS7_SCUWDT_0_DEVICE_ID,
+        .interrupt = XPS_SCU_WDT_INT_ID,
+        .value = 0x1ffffff,
+        .isr = wdt_isr,
+    };
+    status = initialize_wdt(&gic, &wdt);
+    if (status) {
+        printf("initialize_wdt failed %d\n", status);
+        return status;
+    }
+
+    printf("press the center button to exit\n");
     enable_gic_interrupts(&gic);
 
+    printf("starting wdt\n");
+    watchdog_terminate = 0;
+    XScuWdt_LoadWdt(&wdt.device, wdt.value);
+
+    // Verify the watchdog is working. Wait for the watchdog to fire before
+    // restarting it and running in earnest.
+    while (!watchdog_terminate) {
+        usleep(1000 * 25);
+        status = XScuWdt_ReadReg(wdt.config->BaseAddr,
+                XSCUWDT_COUNTER_OFFSET);
+        printf("counter %u\n", status);
+    }
+
+    // Reset the watchdog. The main loop will reset the counter value to
+    // prevent the watchdog from firing.
+    watchdog_terminate = 0;
+    XScuWdt_LoadWdt(&wdt.device, wdt.value);
+
     // Run until told to die.
-    printf("press the center button to exit\n");
-    while (!terminate) {}
+    i = 0;
+    while (!terminate && !watchdog_terminate) {
+
+        // Keep the watchdog from terminating the program.
+        usleep(100500);
+
+        status = XScuWdt_ReadReg(wdt.config->BaseAddr,
+                XSCUWDT_COUNTER_OFFSET);
+
+        printf("main loop %u\n", status);
+        XScuWdt_LoadWdt(&wdt.device, wdt.value);
+    }
     return 0;
 }
