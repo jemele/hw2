@@ -12,6 +12,10 @@
 #include <sleep.h>
 #include <xtime_l.h>
 #include "font_5x7.h"
+#include "ff.h"
+
+// Used by the mmc/sdcard driver.
+u32 FlashReadBaseAddress = XPAR_PS7_SD_0_S_AXI_BASEADDR;
 
 static const u8 oled_addr = 0x3c;
 static const int oled_reset_pin = 12;
@@ -625,6 +629,23 @@ int main()
         return status;
     }
 
+    // Mount the sdcard, and open the data file for buffering.
+    printf("mounting sdcard\n");
+    FATFS fatfs;
+    status = f_mount(0, &fatfs);
+    if (status != FR_OK) {
+        printf("f_mount failed %d\n", status);
+        return status;
+    }
+    const char *file_path = "test.txt";
+    printf("opening %s\n", file_path);
+    FIL fil;
+    status = f_open(&fil, file_path, FA_READ);
+    if (status != FR_OK) {
+        printf("f_open failed %d\n", status);
+        return status;
+    }
+
     // Configure a ~100ms watchdog timer given the current system.
     wdt_t wdt = {
         .id = XPAR_PS7_SCUWDT_0_DEVICE_ID,
@@ -661,11 +682,28 @@ int main()
 
     // Run until told to die.
     i = 0;
+    char buffer;
+    unsigned bytes_read;
     while (!terminate && !watchdog_terminate) {
         wdt_sleep_ms(&wdt, display_update_delay_ms);
 
+        // Read file data and display.
+        // If the file is exhausted, seek to the beginning.
+        if (f_eof(&fil)) {
+            status = f_lseek(&fil, 0);
+            if (status != FR_OK) {
+                printf("f_lseek failed %d\n", status);
+                return status;
+            }
+        }
+        status = f_read(&fil, &buffer, 1, &bytes_read);
+        if (status != FR_OK) {
+            printf("f_read failed %d\n", status);
+            return status;
+        }
+
         // Line wrap the console progress indicator.
-        putchar('.');
+        putchar(buffer);
         if (++i > 80) {
             putchar('\n');
             i = 0;
