@@ -26,7 +26,6 @@ typedef struct {
 // The ttc0 interrupt service routine.
 static void ttc0_isr(void *context)
 {
-    printf("ttc0 isr\n");
     if (!context) {
         return;
     }
@@ -38,7 +37,6 @@ static void ttc0_isr(void *context)
 // The ttc0 interrupt service routine.
 static void ttc1_isr(void *context)
 {
-    printf("ttc1 isr\n");
     if (!context) {
         return;
     }
@@ -50,14 +48,45 @@ static void ttc1_isr(void *context)
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
 {
+    enum button_state {
+        button_up       = 1<<0,
+        button_right    = 1<<1,
+        button_left     = 1<<2,
+        button_down     = 1<<3,
+        button_center   = 1<<4,
+    };
+
     if (!context) {
         return;
     }
     XGpio *buttons = (XGpio*)context;
     XGpio_InterruptDisable(buttons, XGPIO_IR_CH1_MASK);
+    if ((XGpio_InterruptGetStatus(buttons) & XGPIO_IR_CH1_MASK) !=
+            XGPIO_IR_CH1_MASK) {
+        return;
+    }
+
+    // read the button state and respond.
+    const int state = XGpio_DiscreteRead(buttons, 1);
+    switch (state) {
+    case button_up:
+        printf("up\n");
+        break;
+    case button_right:
+        printf("right\n");
+        break;
+    case button_left:
+        printf("left\n");
+        break;
+    case button_down:
+        printf("down\n");
+        break;
+    case button_center:
+        printf("center\n");
+        break;
+    }
     XGpio_InterruptClear(buttons, XGPIO_IR_CH1_MASK);
     XGpio_InterruptEnable(buttons, XGPIO_IR_CH1_MASK);
-    printf("buttons\n");
 }
 
 // Initialize internal gpio.
@@ -184,10 +213,11 @@ static int initialize_axi_gpio(XScuGic *gic, XGpio *buttons)
         printf("XGpio_Initialize failed %d\n", status);
         return status;
     }
-    //! @todo Review trigger type.
+    // Trigger on the rising edge, since the debounce will only assert when
+    // ready.
     printf("setting button trigger type\n");
     XScuGic_SetPriorityTriggerType(gic, XPAR_FABRIC_GPIO_0_VEC_ID,
-        0xa0, 0x3);
+        0xa, 3);
 
     printf("connect buttons interrupt handler\n");
     status = XScuGic_Connect(gic, XPAR_FABRIC_GPIO_0_VEC_ID,
