@@ -11,11 +11,18 @@
 // http://forums.xilinx.com/t5/Xcell-Daily-Blog/Introduction-to-the-Zynq-Triple-Timer-Counter-Part-Three-Adam/ba-p/413105
 // A struct to contain all relevant ttc options.
 typedef struct {
-    u32 hz;
+    int id;
+    int interrupt;
+    Xil_ExceptionHandler isr;
+    u32 frequency_hz;
+    u16 options;
+
+    XTtcPs_Config *config;
+    XTtcPs device;
     u16 interval;
     u8 prescalar;
-    u16 options;
-} ttc_config_t;
+
+} ttc_t;
 
 // The ttc0 interrupt service routine.
 // For now, toggle MIO7.
@@ -25,14 +32,9 @@ static void ttc0_isr(void *context)
     if (!context) {
         return;
     }
-    XTtcPs *ttc0 = (XTtcPs*)context;
-    int status = XTtcPs_GetInterruptStatus(ttc0);
-    XTtcPs_ClearInterruptStatus(ttc0, status);
-
-#if 0
-    const u8 pin = XGpioPs_ReadPin(&gpio, 7);
-    XGpioPs_WritePin(&gpio, 7, !pin);
-#endif
+    ttc_t *ttc = (ttc_t*)context;
+    const int status = XTtcPs_GetInterruptStatus(&ttc->device);
+    XTtcPs_ClearInterruptStatus(&ttc->device, status);
 }
 
 // The buttons interrupt service routine.
@@ -102,68 +104,62 @@ static int initialize_gic(XScuGic *gic)
 
 // Initialize ttc0.
 // This will configure and enable interrupts for the device.
-static int initialize_ttc0(XScuGic *gic, XTtcPs *ttc0)
+static int initialize_ttc0(XScuGic *gic, ttc_t *ttc)
 {
-    XTtcPs_Config *ttc0_config = XTtcPs_LookupConfig(XPAR_PS7_TTC_0_DEVICE_ID);
-    if (!ttc0_config) {
+    ttc->config = XTtcPs_LookupConfig(ttc->id);
+    if (!ttc->config) {
         printf("XTtcPs_LookupConfig failed\n");
         return XST_FAILURE;
     }    
 
     // https://github.com/joshuaspence/ThesisCode/blob/master/TopN_Outlier_Pruning_Block/FPGA/SDK/demo_threadx/src/demo_threadx.c
-    //! @note This is required to run the program multiple times without a board reset.
-    printf("stopping ttc0\n");
-    XTtcPs_WriteReg(ttc0_config->BaseAddress, XTTCPS_CNT_CNTRL_OFFSET, 0x33); 
-    XTtcPs_ReadReg(ttc0_config->BaseAddress, XTTCPS_ISR_OFFSET);
+    //! @note This is required to use ttc multiple times without a board reset.
+    printf("stopping ttc\n");
+    XTtcPs_WriteReg(ttc->config->BaseAddress, XTTCPS_CNT_CNTRL_OFFSET, 0x33);
+    XTtcPs_ReadReg(ttc->config->BaseAddress, XTTCPS_ISR_OFFSET);
 
-    printf("initializing ttc0\n");
-    int status = XTtcPs_CfgInitialize(ttc0, ttc0_config, ttc0_config->BaseAddress);
+    printf("initializing ttc\n");
+    int status = XTtcPs_CfgInitialize(&ttc->device, ttc->config,
+        ttc->config->BaseAddress);
     if (status != XST_SUCCESS) {
         printf("XTtcPs_CfgInitialize failed %d\n", status);
         return status;
     }
 
-    ttc_config_t ttc0_setup = {
-        1, // Hz
-        0,
-        0,
-        XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE
-    };
-    printf("ttc0 setting options\n");
-    status = XTtcPs_SetOptions(ttc0, ttc0_setup.options);
+    printf("ttc setting options\n");
+    status = XTtcPs_SetOptions(&ttc->device, ttc->options);
     if (status != XST_SUCCESS) {
         printf("XTtcPs_SetOptions failed %d\n", status);
         return status;
     }
 
-    printf("ttc0 calculating interval\n");
-    XTtcPs_CalcIntervalFromFreq(ttc0, ttc0_setup.hz,
-        &ttc0_setup.interval, &ttc0_setup.prescalar);
+    printf("ttc calculating interval\n");
+    XTtcPs_CalcIntervalFromFreq(&ttc->device, ttc->frequency_hz,
+        &ttc->interval, &ttc->prescalar);
 
-    printf("ttc0 setting interval\n");
-    XTtcPs_SetInterval(ttc0, ttc0_setup.interval);
+    printf("ttc setting interval\n");
+    XTtcPs_SetInterval(&ttc->device, ttc->interval);
 
-    printf("ttc0 setting prescalar\n");
-    XTtcPs_SetPrescaler(ttc0, ttc0_setup.prescalar);
+    printf("ttc setting prescalar\n");
+    XTtcPs_SetPrescaler(&ttc->device, ttc->prescalar);
 
     // Configure individual interrupt sources.
     // Begin by initializing the ttc0 interrupt.
-    printf("connect ttc0 interrupt handler\n");
-    status = XScuGic_Connect(gic, XPS_TTC0_0_INT_ID,
-        (Xil_ExceptionHandler)ttc0_isr, (void*)ttc0);
+    printf("connect ttc interrupt handler\n");
+    status = XScuGic_Connect(gic, ttc->interrupt, ttc->isr, ttc);
     if (status != XST_SUCCESS) {
         printf("XScuGic_Connect failed %d\n", status);
         return status;
     }
 
-    printf("enabling ttc0 interrupt\n");
-    XScuGic_Enable(gic, XPS_TTC0_0_INT_ID);
+    printf("enabling ttc interrupt\n");
+    XScuGic_Enable(gic, ttc->interrupt);
 
-    printf("enabling ttc0 interval mask\n");
-    XTtcPs_EnableInterrupts(ttc0, XTTCPS_IXR_INTERVAL_MASK);
+    printf("enabling ttc interval mask\n");
+    XTtcPs_EnableInterrupts(&ttc->device, XTTCPS_IXR_INTERVAL_MASK);
 
-    printf("starting ttc0\n");
-    XTtcPs_Start(ttc0);
+    printf("starting ttc\n");
+    XTtcPs_Start(&ttc->device);
     return 0;
 }
 
@@ -233,7 +229,13 @@ int main()
         printf("initialize_gic failed %d\n", status);
         return status;
     }
-    XTtcPs ttc0;
+    ttc_t ttc0 = {
+        .id = XPAR_PS7_TTC_0_DEVICE_ID,
+        .interrupt = XPS_TTC0_0_INT_ID,
+        .isr = ttc0_isr,
+        .frequency_hz = 1,
+        .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
+    };
     status = initialize_ttc0(&gic, &ttc0);
     if (status) {
         printf("initialize_ttc0 failed %d\n", status);
