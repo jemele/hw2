@@ -816,6 +816,7 @@ int main()
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
+    int scroll = 0;
     int word_size = 0;
     char word_buffer[32];
     while (!terminate && !watchdog_terminate) {
@@ -836,6 +837,12 @@ int main()
         // Add a space, and display the word.
         word_buffer[word_size++] = ' ';
         display_word(&oled, oled_addr, word_buffer, word_size);
+
+        // Scroll a pixel line at a time.
+        ssd1306_set_display_start_line(&oled, 64-scroll++);
+        if (scroll > 64) {
+            scroll = 0;
+        }
     }
     return 0;
 }
