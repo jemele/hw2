@@ -61,7 +61,11 @@ void display_character(XIicPs *device, u8 addr, char c)
 {
     int index = (font.width * (c - font.start));
     if ((index < 0) || (index >= font.size)) {
-        index = 0;
+
+        // default to '?' if unknown.
+        // This isn't optimal, but it's good enough for now.
+        c = '?';
+        index = (font.width * (c - font.start));
     }
 
     int i;
@@ -71,36 +75,10 @@ void display_character(XIicPs *device, u8 addr, char c)
     for (i = 0; i < font.pad; ++i) {
         i2c_data(device, addr, 0);
     }
-}
 
-// Display a word to the display, with the following semantics: Words may only
-// break across lines if 3+ characters can first be rendered; otherwise, pad
-// out the current line. This assumes we can support 16 characters per line,
-// and that there are 8 lines on the display.
-// XXX there's probably a better way to do this.
-void display_word(XIicPs *device, u8 addr, char *w, int n)
-{
-    int i;
-    static u8 x = 0, y = 0;
-
-    // If the word is multiline, check for wrapping/padding, and make it so.
-    static const int max_chars = 16;
-    static const int max_lines = 8;
-    const int remaining = max_chars - x;
-    printf("n %d remaining %d\n", n, remaining);
-
-    if ((n > remaining) && (remaining < 3)) {
-        printf("wrapping\n");
-        x = 0;
-        y = (y+1)%max_lines;
-        for (i = 0; i < remaining; ++i) {
-            display_character(device, addr, ' ');
-        }
-    }
-
-    for (i = 0; i < n; ++i, x=(x+1)%max_chars, y=(y+1)%max_lines) {
-        display_character(device, addr, w[i]);
-    }
+    // emulate the display output on the console.
+    putchar(c);
+    fflush(stdout);
 }
 
 // An i2c device context.
@@ -113,6 +91,71 @@ typedef struct {
     XIicPs_Config *config;
     XIicPs device;
 } i2c_t;
+
+// Set Page Start: 1 0 1 1 0 X2 X1 X0
+static void ssd1306_set_page_start(i2c_t *i2c, u8 page)
+{
+    const u8 buf[] = {0x80,0xb0|(page&0x7)};
+    XIicPs_MasterSend(&i2c->device, (u8*)buf, sizeof(buf), oled_addr);
+    usleep(i2c_write_delay);
+}
+
+// Clear a line and return the cursor to the beginning of the line.
+static void ssd1306_clear_line(i2c_t *i2c, u8 line)
+{
+    ssd1306_set_page_start(i2c, line);
+    int i;
+    for (i = 0; i < 128; ++i) {
+        i2c_data(&i2c->device, oled_addr, 0);
+    }
+    ssd1306_set_page_start(i2c, line);
+}
+
+// Display a word to the display, with the following semantics: Words may only
+// break across lines if 3+ characters can first be rendered; otherwise, pad
+// out the current line. This assumes we can support 16 characters per line,
+// and that there are 8 lines on the display.
+// @todo there's probably a better way to do this.
+// @note This emulates the display output on the console for debugging purposes.
+void display_word(i2c_t *i2c, u8 addr, char *w, int n)
+{
+    int i;
+    static u8 x = 0, y = 0;
+
+    // If the word is multiline, check for wrapping/padding, and make it so.
+    static const int max_chars = 16;
+    static const int max_lines = 8;
+    const int remaining = max_chars - x;
+
+    if ((n > remaining) && (remaining < 3)) {
+        x = 0;
+        y = (y+1)%max_lines;
+        for (i = 0; i < remaining; ++i) {
+            display_character(&i2c->device, addr, ' ');
+        }
+        ssd1306_clear_line(i2c, y);
+        putchar('\n');
+    }
+
+    // Keep track of line breaks.
+    for (i = 0; i < n; ++i) {
+
+        // If this is the beginning of the line, eat whitespace.
+        if (!x && w[i] == ' ') {
+            continue;
+        }
+
+        // Otherwise, display the character. Blank line wraps to make things
+        // easier on the reader.
+        display_character(&i2c->device, addr, w[i]);
+        x=(x+1)%max_chars;
+        if (!x) {
+            y=(y+1)%max_lines;
+            ssd1306_clear_line(i2c, y);
+            putchar('\n');
+        }
+    }
+}
 
 // Initialize an i2c device.
 static int initialize_i2c(i2c_t *i2c)
@@ -216,7 +259,7 @@ static void ttc1_isr(void *context)
 
 // The terminate flag. If set, the program should terminate.
 volatile int terminate = 0;
-volatile int display_update_delay_ms = 250;
+volatile int display_update_delay_ms = 1000;
 static const int display_update_minimum_delay_ms = 50;
 
 // The buttons interrupt service routine.
@@ -258,15 +301,12 @@ static void buttons_isr(void *context)
 
     // Terminate the application.
     case button_center:
-        printf("terminate\n");
         terminate = 1;
         break;
 
     case button_right:
-        printf("right\n");
         break;
     case button_left:
-        printf("left\n");
         break;
     }
     XGpio_InterruptClear(buttons, XGPIO_IR_CH1_MASK);
@@ -486,25 +526,6 @@ static void ssd1306_set_display_start_line(i2c_t *i2c, int line)
     usleep(i2c_write_delay);
 }
 
-// Set Page Start: 1 0 1 1 0 X2 X1 X0
-static void ssd1306_set_page_start(i2c_t *i2c, u8 page)
-{
-    const u8 buf[] = {0x80,0xb0|(page&0x7)};
-    XIicPs_MasterSend(&i2c->device, (u8*)buf, sizeof(buf), oled_addr);
-    usleep(i2c_write_delay);
-}
-
-// Clear a line and return the cursor to the beginning of the line.
-static void ssd1306_clear_line(i2c_t *i2c, u8 line)
-{
-    ssd1306_set_page_start(i2c, line);
-    int i;
-    for (i = 0; i < 128; ++i) {
-        i2c_data(&i2c->device, oled_addr, 0);
-    }
-    ssd1306_set_page_start(i2c, line);
-}
-
 // Clear the display.
 static void ssd1306_clear(i2c_t *i2c) {
     int i;
@@ -701,16 +722,6 @@ int main()
     }
 #endif
 
-    // Attempt a line blank.
-    int k;
-    for (k = 0; k < 16; ++k) {
-    display_character(&oled.device, oled_addr, 'A');
-    usleep(250 * 1000);
-    }
-    sleep(1);
-    ssd1306_clear_line(&oled, 0);
-    sleep(1);
-
     XScuGic gic;
     status = initialize_gic(&gic);
     if (status) {
@@ -824,7 +835,7 @@ int main()
 
         // Add a space, and display the word.
         word_buffer[word_size++] = ' ';
-        display_word(&oled.device, oled_addr, word_buffer, word_size);
+        display_word(&oled, oled_addr, word_buffer, word_size);
     }
     return 0;
 }
