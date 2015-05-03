@@ -75,10 +75,7 @@ void display_character(XIicPs *device, u8 addr, char c)
     for (i = 0; i < font.pad; ++i) {
         i2c_data(device, addr, 0);
     }
-
-    // emulate the display output on the console.
     putchar(c);
-    fflush(stdout);
 }
 
 // An i2c device context.
@@ -109,6 +106,7 @@ static void ssd1306_clear_line(i2c_t *i2c, u8 line)
         i2c_data(&i2c->device, oled_addr, 0);
     }
     ssd1306_set_page_start(i2c, line);
+    putchar('\n');
 }
 
 // Display a word to the display, with the following semantics: Words may only
@@ -134,7 +132,6 @@ void display_word(i2c_t *i2c, u8 addr, char *w, int n)
             display_character(&i2c->device, addr, ' ');
         }
         ssd1306_clear_line(i2c, y);
-        putchar('\n');
     }
 
     // Keep track of line breaks.
@@ -152,7 +149,6 @@ void display_word(i2c_t *i2c, u8 addr, char *w, int n)
         if (!x) {
             y=(y+1)%max_lines;
             ssd1306_clear_line(i2c, y);
-            putchar('\n');
         }
     }
 }
@@ -798,7 +794,7 @@ int main()
     wdt_t wdt = {
         .id = XPAR_PS7_SCUWDT_0_DEVICE_ID,
         .interrupt = XPS_SCU_WDT_INT_ID,
-        .value = 0x1ffffff,
+        .value = COUNTS_PER_SECOND,
         .isr = wdt_isr,
     };
     status = initialize_wdt(&gic, &wdt);
