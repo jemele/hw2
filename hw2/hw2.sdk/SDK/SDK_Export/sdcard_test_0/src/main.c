@@ -448,6 +448,34 @@ static void ssd1306_reset(i2c_t *i2c, XGpioPs *gpio, int reset_pin)
     }
 }
 
+// Issue the set display start line command.
+// This can be used to support scrolling.
+static void ssd1306_set_display_start_line(i2c_t *i2c, int line)
+{
+    const u8 buf[] = {0x80,1<<6|line};
+    XIicPs_MasterSend(&i2c->device, (u8*)buf, sizeof(buf), oled_addr);
+    usleep(i2c_write_delay);
+}
+
+// Set Page Start: 1 0 1 1 0 X2 X1 X0
+static void ssd1306_set_page_start(i2c_t *i2c, u8 page)
+{
+    const u8 buf[] = {0x80,0xb0|(page&0x7)};
+    XIicPs_MasterSend(&i2c->device, (u8*)buf, sizeof(buf), oled_addr);
+    usleep(i2c_write_delay);
+}
+
+// Clear a line and return the cursor to the beginning of the line.
+static void ssd1306_clear_line(i2c_t *i2c, u8 line)
+{
+    ssd1306_set_page_start(i2c, line);
+    int i;
+    for (i = 0; i < 128; ++i) {
+        i2c_data(&i2c->device, oled_addr, 0);
+    }
+    ssd1306_set_page_start(i2c, line);
+}
+
 // Clear the display.
 static void ssd1306_clear(i2c_t *i2c) {
     int i;
@@ -635,6 +663,25 @@ int main()
     ssd1306_reset(&oled, &gpio, oled_reset_pin);
     ssd1306_clear(&oled);
 
+#if 0
+    // scrolling
+    int k;
+    for (k = 0; k <= 64; ++k) {
+    ssd1306_set_display_start_line(&oled, 64-k);
+    usleep(50 * 1000);
+    }
+#endif
+
+    // Attempt a line blank.
+    int k;
+    for (k = 0; k < 16; ++k) {
+    display_character(&oled.device, oled_addr, 'A', &font);
+    usleep(250 * 1000);
+    }
+    sleep(1);
+    ssd1306_clear_line(&oled, 0);
+    sleep(1);
+
     XScuGic gic;
     status = initialize_gic(&gic);
     if (status) {
@@ -743,11 +790,12 @@ int main()
             printf("read_word failed %d\n", status);
             return status;
         }
+
+        // Write out the word to the display.
         for (i = 0; i < word_size; ++i) {
-            printf("%c", word_buffer[i]);
+            display_character(&oled.device, oled_addr, word_buffer[i], &font);
         }
-        printf("\n");
-        //display_character(&oled.device, oled_addr, buffer, &font);
+        display_character(&oled.device, oled_addr, ' ', &font);
     }
     return 0;
 }
