@@ -844,5 +844,8 @@ int main()
             scroll = 0;
         }
     }
+
+    // blank the display on exit.
+    ssd1306_clear(&oled);
     return 0;
 }
