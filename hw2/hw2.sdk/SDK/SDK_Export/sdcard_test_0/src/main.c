@@ -58,18 +58,18 @@ const font_t font = {
 // Display a character on the device.
 // Map the character onto the font index, and then write the font data out.
 // Do not display invalid characters.
-void display_character(XIicPs *device, u8 addr, char c, const font_t *f)
+void display_character(XIicPs *device, u8 addr, char c)
 {
-    const int index = (f->width * (c - f->start));
-    if ((index < 0) || (index >= f->size)) {
+    const int index = (font.width * (c - font.start));
+    if ((index < 0) || (index >= font.size)) {
         return;
     }
 
     int i;
-    for (i = 0; i < f->width; ++i) {
-        i2c_data(device, addr, f->base[index+i]);
+    for (i = 0; i < font.width; ++i) {
+        i2c_data(device, addr, font.base[index+i]);
     }
-    for (i = 0; i < f->pad; ++i) {
+    for (i = 0; i < font.pad; ++i) {
         i2c_data(device, addr, 0);
     }
 }
@@ -675,7 +675,7 @@ int main()
     // Attempt a line blank.
     int k;
     for (k = 0; k < 16; ++k) {
-    display_character(&oled.device, oled_addr, 'A', &font);
+    display_character(&oled.device, oled_addr, 'A');
     usleep(250 * 1000);
     }
     sleep(1);
@@ -793,9 +793,9 @@ int main()
 
         // Write out the word to the display.
         for (i = 0; i < word_size; ++i) {
-            display_character(&oled.device, oled_addr, word_buffer[i], &font);
+            display_character(&oled.device, oled_addr, word_buffer[i]);
         }
-        display_character(&oled.device, oled_addr, ' ', &font);
+        display_character(&oled.device, oled_addr, ' ');
     }
     return 0;
 }
