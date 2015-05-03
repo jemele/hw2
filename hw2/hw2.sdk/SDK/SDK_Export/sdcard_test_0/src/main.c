@@ -262,6 +262,11 @@ volatile int terminate = 0;
 volatile int display_update_delay_ms = 1000;
 static const int display_update_minimum_delay_ms = 50;
 
+// Scrolling settings.
+static const int scroll_update_maximum = 16;
+static const int scroll_update_minimum = 1;
+volatile int scroll_update = 1;
+
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
 {
@@ -305,13 +310,21 @@ static void buttons_isr(void *context)
         break;
 
     case button_right:
+        if (scroll_update < scroll_update_maximum) {
+            ++scroll_update;
+        }
         break;
+
     case button_left:
+        if (scroll_update > scroll_update_minimum) {
+            --scroll_update;
+        }
         break;
     }
     XGpio_InterruptClear(buttons, XGPIO_IR_CH1_MASK);
     XGpio_InterruptEnable(buttons, XGPIO_IR_CH1_MASK);
 }
+
 
 // Initialize internal gpio.
 // This is used to control the mio7 led.
@@ -839,13 +852,15 @@ int main()
         display_word(&oled, oled_addr, word_buffer, word_size);
 
         // Scroll a pixel line at a time.
-        ssd1306_set_display_start_line(&oled, 64-scroll++);
+        ssd1306_set_display_start_line(&oled, 64-scroll);
+        scroll += scroll_update;
         if (scroll > 64) {
             scroll = 0;
         }
     }
 
     // blank the display on exit.
+    XScuWdt_Stop(&wdt.device);
     ssd1306_clear(&oled);
     return 0;
 }
