@@ -57,12 +57,11 @@ const font_t font = {
 
 // Display a character on the device.
 // Map the character onto the font index, and then write the font data out.
-// Do not display invalid characters.
 void display_character(XIicPs *device, u8 addr, char c)
 {
-    const int index = (font.width * (c - font.start));
+    int index = (font.width * (c - font.start));
     if ((index < 0) || (index >= font.size)) {
-        return;
+        index = 0;
     }
 
     int i;
@@ -71,6 +70,36 @@ void display_character(XIicPs *device, u8 addr, char c)
     }
     for (i = 0; i < font.pad; ++i) {
         i2c_data(device, addr, 0);
+    }
+}
+
+// Display a word to the display, with the following semantics: Words may only
+// break across lines if 3+ characters can first be rendered; otherwise, pad
+// out the current line. This assumes we can support 16 characters per line,
+// and that there are 8 lines on the display.
+// XXX there's probably a better way to do this.
+void display_word(XIicPs *device, u8 addr, char *w, int n)
+{
+    int i;
+    static u8 x = 0, y = 0;
+
+    // If the word is multiline, check for wrapping/padding, and make it so.
+    static const int max_chars = 16;
+    static const int max_lines = 8;
+    const int remaining = max_chars - x;
+    printf("n %d remaining %d\n", n, remaining);
+
+    if ((n > remaining) && (remaining < 3)) {
+        printf("wrapping\n");
+        x = 0;
+        y = (y+1)%max_lines;
+        for (i = 0; i < remaining; ++i) {
+            display_character(device, addr, ' ');
+        }
+    }
+
+    for (i = 0; i < n; ++i, x=(x+1)%max_chars, y=(y+1)%max_lines) {
+        display_character(device, addr, w[i]);
     }
 }
 
@@ -784,18 +813,18 @@ int main()
         // If we've exhausted the word buffer, read a new word.
         // Note: A pathological file that contains only spaces will trip the
         // watchdog.
-        status = read_word(&fil, word_buffer, sizeof(word_buffer),
+
+        // Make sure there's enough room for a space at the end.
+        status = read_word(&fil, word_buffer, sizeof(word_buffer)-1,
                 &word_size);
         if (status) {
             printf("read_word failed %d\n", status);
             return status;
         }
 
-        // Write out the word to the display.
-        for (i = 0; i < word_size; ++i) {
-            display_character(&oled.device, oled_addr, word_buffer[i]);
-        }
-        display_character(&oled.device, oled_addr, ' ');
+        // Add a space, and display the word.
+        word_buffer[word_size++] = ' ';
+        display_word(&oled.device, oled_addr, word_buffer, word_size);
     }
     return 0;
 }
