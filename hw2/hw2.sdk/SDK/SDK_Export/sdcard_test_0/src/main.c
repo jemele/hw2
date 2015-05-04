@@ -22,6 +22,8 @@ typedef struct {
     void *q[QUEUE_MAXSIZE];
 } queue_t;
 
+static queue_t *schedulerq = 0;
+
 // Initialize the queue.
 static void queue_init(queue_t *q)
 {
@@ -335,6 +337,12 @@ static void ttc0_isr(void *context)
     ttc_t *ttc = (ttc_t*)context;
     const int status = XTtcPs_GetInterruptStatus(&ttc->device);
     XTtcPs_ClearInterruptStatus(&ttc->device, status);
+
+    // Add an item to the scheduler runqueue.
+    // This gives us a chance to test an approach to scheduling.
+    if (schedulerq) {
+        queue_enqueue(schedulerq, (void*)0);
+    }
 }
 
 // The timer1 interrupt service routine, which toggles led mio7.
@@ -904,6 +912,12 @@ int main()
         return status;
     }
 
+    // The scheduler runqueue.
+    // XXX do we need to synchronize access (disable interrupts) to the queue?
+    queue_t runq;
+    queue_init(&runq);
+    schedulerq = &runq;
+
     printf("press the center button to exit\n");
     enable_gic_interrupts(&gic);
 
@@ -953,6 +967,16 @@ int main()
         scroll += scroll_update;
         if (scroll > 64) {
             scroll = 0;
+        }
+
+        // If there something in the queue, grab it.
+        if (!queue_isempty(schedulerq)) {
+            int task;
+            status = queue_dequeue(schedulerq, (void**)&task);
+            if (status) {
+                printf("queue_dequeue failed %d\n", status);
+                return status;
+            }
         }
     }
 
