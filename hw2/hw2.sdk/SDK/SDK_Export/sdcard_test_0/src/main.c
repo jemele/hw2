@@ -1,4 +1,5 @@
 // Joshua Emele <jemele@acm.org>
+#include <stdlib.h>
 #include <stdio.h>
 #include "platform.h"
 #include <xscugic.h>
@@ -118,6 +119,14 @@ static int queue_test()
     }
     return 0;
 }
+
+// A task scheduled by the scheduler.
+// Tasks are dynamically allocated and queued.
+// The scheduler will free any queued tasks it dequeues.
+typedef struct {
+    void (*handler)(void*);
+    void *context;
+} task_t;
 
 // Used by the mmc/sdcard driver.
 u32 FlashReadBaseAddress = XPAR_PS7_SD_0_S_AXI_BASEADDR;
@@ -328,6 +337,39 @@ static int ttc_set_frequency(ttc_t *ttc)
     return 0;
 }
 
+// Issue the set display start line command.
+// This can be used to support scrolling.
+static void ssd1306_set_display_start_line(i2c_t *i2c, int line)
+{
+    const u8 buf[] = {0x80,1<<6|line};
+    XIicPs_MasterSend(&i2c->device, (u8*)buf, sizeof(buf), oled_addr);
+    usleep(i2c_write_delay);
+}
+
+// Scrolling settings.
+static const int scroll_update_maximum = 16;
+static const int scroll_update_minimum = 1;
+volatile int scroll_update = 1;
+
+// The scroll display context, used in scroll display task scheduling.
+typedef struct {
+    int scroll;
+    i2c_t *oled;
+} scroll_display_context_t;
+
+// The scroll display task handler.
+static void scroll_display(void *context)
+{
+    scroll_display_context_t * c = (scroll_display_context_t*)context;
+
+    // Scroll a pixel line at a time.
+    ssd1306_set_display_start_line(c->oled, 64 - c->scroll);
+    c->scroll += scroll_update;
+    if (c->scroll > 64) {
+        c->scroll = 0;
+    }
+}
+
 // The ttc0 interrupt service routine.
 static void ttc0_isr(void *context)
 {
@@ -341,7 +383,12 @@ static void ttc0_isr(void *context)
     // Add an item to the scheduler runqueue.
     // This gives us a chance to test an approach to scheduling.
     if (schedulerq) {
-        queue_enqueue(schedulerq, (void*)0);
+        task_t *t = malloc(sizeof(task_t));
+        if (t) {
+            t->handler = scroll_display;
+            t->context = ttc->isr_context;
+            queue_enqueue(schedulerq, t);
+        }
     }
 }
 
@@ -368,11 +415,6 @@ static void ttc1_isr(void *context)
 volatile int terminate = 0;
 volatile int display_update_delay_ms = 1000;
 static const int display_update_minimum_delay_ms = 50;
-
-// Scrolling settings.
-static const int scroll_update_maximum = 16;
-static const int scroll_update_minimum = 1;
-volatile int scroll_update = 1;
 
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
@@ -637,15 +679,6 @@ static void ssd1306_reset(i2c_t *i2c, XGpioPs *gpio, int reset_pin)
     }
 }
 
-// Issue the set display start line command.
-// This can be used to support scrolling.
-static void ssd1306_set_display_start_line(i2c_t *i2c, int line)
-{
-    const u8 buf[] = {0x80,1<<6|line};
-    XIicPs_MasterSend(&i2c->device, (u8*)buf, sizeof(buf), oled_addr);
-    usleep(i2c_write_delay);
-}
-
 // Clear the display.
 static void ssd1306_clear(i2c_t *i2c) {
     int i;
@@ -847,11 +880,16 @@ int main()
         return status;
     }
 
+    scroll_display_context_t scroll_display_context = {
+        .scroll = 0,
+        .oled = &oled,
+    };
     ttc_t timers[] = {
         {
             .id = XPAR_PS7_TTC_0_DEVICE_ID,
             .interrupt = XPS_TTC0_0_INT_ID,
             .isr = ttc0_isr,
+            .isr_context = &scroll_display_context,
             .frequency_hz = 1,
             .options = XTTCPS_OPTION_INTERVAL_MODE|XTTCPS_OPTION_WAVE_DISABLE,
         },
@@ -940,7 +978,6 @@ int main()
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
-    int scroll = 0;
     int word_size = 0;
     char word_buffer[32];
     while (!terminate && !watchdog_terminate) {
@@ -962,20 +999,17 @@ int main()
         word_buffer[word_size++] = ' ';
         display_word(&oled, oled_addr, word_buffer, word_size);
 
-        // Scroll a pixel line at a time.
-        ssd1306_set_display_start_line(&oled, 64-scroll);
-        scroll += scroll_update;
-        if (scroll > 64) {
-            scroll = 0;
-        }
-
         // If there something in the queue, grab it.
         if (!queue_isempty(schedulerq)) {
-            int task;
-            status = queue_dequeue(schedulerq, (void**)&task);
+            task_t *t;
+            status = queue_dequeue(schedulerq, (void**)&t);
             if (status) {
                 printf("queue_dequeue failed %d\n", status);
                 return status;
+            }
+            if (t) {
+                t->handler(t->context);
+                free(t);
             }
         }
     }
