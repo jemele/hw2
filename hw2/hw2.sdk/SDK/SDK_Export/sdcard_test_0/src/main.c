@@ -722,15 +722,6 @@ int main()
     ssd1306_reset(&oled, &gpio, oled_reset_pin);
     ssd1306_clear(&oled);
 
-#if 0
-    // scrolling
-    int k;
-    for (k = 0; k <= 64; ++k) {
-    ssd1306_set_display_start_line(&oled, 64-k);
-    usleep(50 * 1000);
-    }
-#endif
-
     XScuGic gic;
     status = initialize_gic(&gic);
     if (status) {
