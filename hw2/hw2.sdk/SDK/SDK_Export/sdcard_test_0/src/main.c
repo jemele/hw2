@@ -861,6 +861,7 @@ static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
         return status;
     }
     XScuWdt_SetTimerMode(&wdt->device);
+    XScuWdt_EnableAutoReload(&wdt->device);
     XScuWdt_LoadWdt(&wdt->device, wdt->value);
 
     // Configure the wdt interrupt.
@@ -1005,17 +1006,12 @@ int main()
     }
 
     // The scheduler runqueue.
-    // XXX do we need to synchronize access (disable interrupts) to the queue?
     queue_t runq;
     queue_init(&runq);
     schedulerq = &runq;
 
     printf("press the center button to exit\n");
     enable_gic_interrupts(&gic);
-
-    printf("starting wdt\n");
-    XScuWdt_EnableAutoReload(&wdt.device);
-    XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
     while (!terminate) {
