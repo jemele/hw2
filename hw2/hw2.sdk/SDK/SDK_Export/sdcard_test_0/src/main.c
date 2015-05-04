@@ -23,8 +23,6 @@ typedef struct {
     void *q[QUEUE_MAXSIZE];
 } queue_t;
 
-static queue_t *schedulerq = 0;
-
 // Initialize the queue.
 static void queue_init(queue_t *q)
 {
@@ -119,6 +117,28 @@ static int queue_test()
     }
     return 0;
 }
+
+// A priority queue, used for priority scheduling.  Three priority bands are
+// provided, which nicely maps to the three tasks scheduled in the system
+// (display update, led update, scroll update). The highest priority is 0, the
+// lowest priority is 3.
+#define MAX_PRIORITIES 3
+typedef struct {
+    queue_t q[MAX_PRIORITIES];
+} priority_queue_t;
+
+static void priority_queue_init(priority_queue_t *q)
+{
+    int i;
+    for (i = 0; i < MAX_PRIORITIES; ++i) {
+        queue_init(&q->q[i]);
+    }
+}
+static int priority_queue_enqueue(priority_queue_t *q, void *p, int priority)
+{
+    return queue_enqueue(&q->q[priority],p);
+}
+static priority_queue_t *schedulerq = 0;
 
 // A task scheduled by the scheduler.
 // Tasks are dynamically allocated and queued.
@@ -387,7 +407,7 @@ static void ttc0_isr(void *context)
         if (t) {
             t->handler = scroll_display;
             t->context = ttc->isr_context;
-            if (queue_enqueue(schedulerq, t)) {
+            if (priority_queue_enqueue(schedulerq, t, 0)) {
                 free(t);
             }
         }
@@ -419,7 +439,7 @@ static void ttc1_isr(void *context)
         if (t) {
             t->handler = toggle_mio7_led;
             t->context = ttc->isr_context;
-            if (queue_enqueue(schedulerq, t)) {
+            if (priority_queue_enqueue(schedulerq, t, 0)) {
                 free(t);
             }
         }
@@ -809,7 +829,7 @@ static void wdt_isr(void *context)
         if (t) {
             t->handler = display_update;
             t->context = wdt->isr_context;
-            if (queue_enqueue(schedulerq, t)) {
+            if (priority_queue_enqueue(schedulerq, t, 0)) {
                 free(t);
             }
         }
@@ -1019,8 +1039,8 @@ int main()
     display_update_timer = &wdt.device;
 
     // The scheduler runqueue.
-    queue_t runq;
-    queue_init(&runq);
+    priority_queue_t runq;
+    priority_queue_init(&runq);
     schedulerq = &runq;
 
     printf("press the center button to exit\n");
@@ -1030,16 +1050,19 @@ int main()
     while (!terminate) {
 
         // If there something in the queue, grab it.
-        if (!queue_isempty(schedulerq)) {
-            task_t *t;
-            status = queue_dequeue(schedulerq, (void**)&t);
-            if (status) {
-                printf("queue_dequeue failed %d\n", status);
-                return status;
-            }
-            if (t) {
-                t->handler(t->context);
-                free(t);
+        for (i = 0; i < MAX_PRIORITIES; ++i) {
+            queue_t *q = &schedulerq->q[i];
+            if (!queue_isempty(q)) {
+                task_t *t;
+                status = queue_dequeue(q, (void**)&t);
+                if (status) {
+                    printf("queue_dequeue failed %d\n", status);
+                    return status;
+                }
+                if (t) {
+                    t->handler(t->context);
+                    free(t);
+                }
             }
         }
     }
