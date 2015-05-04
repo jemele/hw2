@@ -708,95 +708,10 @@ typedef struct {
     int interrupt;
     int value;
     Xil_ExceptionHandler isr;
+    void *isr_context;
     XScuWdt_Config *config;
     XScuWdt device;
 } wdt_t;
-
-// Used to signal the watchdog has fired.
-volatile int watchdog_terminate = 0;
-
-// The watchdog timer isr.
-static void wdt_isr(void *context)
-{
-    printf("wdt timeout\n");
-    watchdog_terminate = 1;
-}
-
-// Sleep arbitrarily while petting the dog.
-// Returns non-zero if the watchdog fired while delaying.
-static int wdt_sleep_us(wdt_t *wdt, int us)
-{
-    static const int time_per_us = COUNTS_PER_SECOND/1000000;
-    const int threshold = us * time_per_us;
-
-    XTime start_time, current_time;
-    XTime_GetTime(&start_time);
-
-    while (!watchdog_terminate) {
-
-        // Keep the watchdog from terminating the program.
-        XScuWdt_LoadWdt(&wdt->device, wdt->value);
-
-        // Continue to sample and wait until the requested time has elapsed.
-        XTime_GetTime(&current_time);
-        const int elapsed_time = current_time - start_time;
-        if (elapsed_time >= threshold) {
-            break;
-        }
-    }
-    return watchdog_terminate;
-}
-static int wdt_sleep_ms(wdt_t *wdt, int ms)
-{
-    return wdt_sleep_us(wdt, ms*1000);
-}
-#if 0
-static int wdt_sleep_s(wdt_t *wdt, int s)
-{
-    return wdt_sleep_us(wdt, s*1000000);
-}
-#endif
-
-// Initialize the watchdog.
-static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
-{
-    wdt->config = XScuWdt_LookupConfig(wdt->id);
-    if (!wdt->config) {
-        printf("XScuWdt_LookupConfig failed\n");
-        return XST_FAILURE;
-    }
-    int status = XScuWdt_CfgInitialize(&wdt->device, wdt->config,
-            wdt->config->BaseAddr);
-    if (status) {
-        printf("XScuWdt_CfgInitialize failed %d\n", status);
-        return status;
-    }
-
-    // Disable the watchdog before beginning
-    status = XScuWdt_SelfTest(&wdt->device);
-    if (status) {
-        printf("XScuWdt_SelfTest failed %d\n", status);
-        return status;
-    }
-    XScuWdt_SetTimerMode(&wdt->device);
-    XScuWdt_LoadWdt(&wdt->device, wdt->value);
-
-    // Configure the wdt interrupt.
-    status = XScuGic_Connect(gic, wdt->interrupt, wdt->isr, wdt);
-    if (status) {
-        printf("XScuGic_Connect failed %d\n", status);
-        return status;
-    }
-
-    printf("enable wdt interrupts for timer mode\n");
-    int control = XScuWdt_GetControlReg(&wdt->device);
-    control |= XSCUWDT_CONTROL_IT_ENABLE_MASK;
-    XScuWdt_SetControlReg(&wdt->device, control);
-
-    printf("enable wdt interrupt\n");
-	XScuGic_Enable(gic, wdt->interrupt);
-    return 0;
-}
 
 // Read a space delimited word from the specified file.
 // If the file is exhausted before a word is found, wrap.
@@ -843,6 +758,125 @@ static int read_word(FIL *fil, char *buffer, int buffer_size, int *word_size)
         buffer[i++] = c;
     }
     *word_size = i;
+    return 0;
+}
+
+// The file and oled structure needed to drive display update.
+typedef struct {
+    FIL *fil;
+    i2c_t *oled;
+} display_update_context_t;
+
+// The display update task handler.
+static void display_update(void *context)
+{
+    display_update_context_t *c = (display_update_context_t*)context;
+
+    int word_size = 0;
+    char word_buffer[32];
+
+    // Make sure there's enough room for a space at the end.
+    int status = read_word(c->fil, word_buffer, sizeof(word_buffer)-1,
+            &word_size);
+    if (status) {
+        printf("read_word failed %d\n", status);
+        return;
+    }
+
+    // Add a space, and display the word.
+    word_buffer[word_size++] = ' ';
+    display_word(c->oled, oled_addr, word_buffer, word_size);
+}
+
+// The watchdog timer isr.
+static void wdt_isr(void *context)
+{
+    wdt_t *wdt = (wdt_t*)context;
+    if (schedulerq) {
+        task_t *t = malloc(sizeof(task_t));
+        if (t) {
+            t->handler = display_update;
+            t->context = wdt->isr_context;
+            if (queue_enqueue(schedulerq, t)) {
+                free(t);
+            }
+        }
+    }
+}
+
+#if 0
+// Sleep arbitrarily while petting the dog.
+// Returns non-zero if the watchdog fired while delaying.
+static int wdt_sleep_us(wdt_t *wdt, int us)
+{
+    static const int time_per_us = COUNTS_PER_SECOND/1000000;
+    const int threshold = us * time_per_us;
+
+    XTime start_time, current_time;
+    XTime_GetTime(&start_time);
+
+    while (!watchdog_terminate) {
+
+        // Keep the watchdog from terminating the program.
+        XScuWdt_LoadWdt(&wdt->device, wdt->value);
+
+        // Continue to sample and wait until the requested time has elapsed.
+        XTime_GetTime(&current_time);
+        const int elapsed_time = current_time - start_time;
+        if (elapsed_time >= threshold) {
+            break;
+        }
+    }
+    return watchdog_terminate;
+}
+static int wdt_sleep_ms(wdt_t *wdt, int ms)
+{
+    return wdt_sleep_us(wdt, ms*1000);
+}
+static int wdt_sleep_s(wdt_t *wdt, int s)
+{
+    return wdt_sleep_us(wdt, s*1000000);
+}
+#endif
+
+// Initialize the watchdog.
+static int initialize_wdt(XScuGic *gic, wdt_t *wdt)
+{
+    wdt->config = XScuWdt_LookupConfig(wdt->id);
+    if (!wdt->config) {
+        printf("XScuWdt_LookupConfig failed\n");
+        return XST_FAILURE;
+    }
+    int status = XScuWdt_CfgInitialize(&wdt->device, wdt->config,
+            wdt->config->BaseAddr);
+    if (status) {
+        printf("XScuWdt_CfgInitialize failed %d\n", status);
+        return status;
+    }
+
+    // Disable the watchdog before beginning
+    status = XScuWdt_SelfTest(&wdt->device);
+    if (status) {
+        printf("XScuWdt_SelfTest failed %d\n", status);
+        return status;
+    }
+    XScuWdt_SetTimerMode(&wdt->device);
+    XScuWdt_LoadWdt(&wdt->device, wdt->value);
+
+    // Configure the wdt interrupt.
+    status = XScuGic_Connect(gic, wdt->interrupt, wdt->isr, wdt);
+    if (status) {
+        printf("XScuGic_Connect failed %d\n", status);
+        return status;
+    }
+
+    printf("enable wdt interrupts for timer mode\n");
+    int control = XScuWdt_GetControlReg(&wdt->device);
+    control |= XSCUWDT_CONTROL_IT_ENABLE_MASK;
+    XScuWdt_SetControlReg(&wdt->device, control);
+
+    printf("enable wdt interrupt\n");
+	XScuGic_Enable(gic, wdt->interrupt);
     return 0;
 }
 
@@ -953,11 +987,16 @@ int main()
     }
 
     // Configure a ~100ms watchdog timer given the current system.
+    display_update_context_t display_update_context = {
+        .fil = &fil,
+        .oled = &oled,
+    };
     wdt_t wdt = {
         .id = XPAR_PS7_SCUWDT_0_DEVICE_ID,
         .interrupt = XPS_SCU_WDT_INT_ID,
         .value = COUNTS_PER_SECOND,
         .isr = wdt_isr,
+        .isr_context = &display_update_context,
     };
     status = initialize_wdt(&gic, &wdt);
     if (status) {
@@ -975,44 +1014,11 @@ int main()
     enable_gic_interrupts(&gic);
 
     printf("starting wdt\n");
-    watchdog_terminate = 0;
-    XScuWdt_LoadWdt(&wdt.device, wdt.value);
-
-    // Verify the watchdog is working. Wait for the watchdog to fire before
-    // restarting it and running in earnest.
-    while (!watchdog_terminate) {
-        usleep(1000 * 25);
-        status = XScuWdt_ReadReg(wdt.config->BaseAddr,
-                XSCUWDT_COUNTER_OFFSET);
-        printf("counter %u\n", status);
-    }
-
-    // Reset the watchdog. The main loop will reset the counter value to
-    // prevent the watchdog from firing.
-    watchdog_terminate = 0;
+    XScuWdt_EnableAutoReload(&wdt.device);
     XScuWdt_LoadWdt(&wdt.device, wdt.value);
 
     // Run until told to die.
-    int word_size = 0;
-    char word_buffer[32];
-    while (!terminate && !watchdog_terminate) {
-        wdt_sleep_ms(&wdt, display_update_delay_ms);
-
-        // If we've exhausted the word buffer, read a new word.
-        // Note: A pathological file that contains only spaces will trip the
-        // watchdog.
-
-        // Make sure there's enough room for a space at the end.
-        status = read_word(&fil, word_buffer, sizeof(word_buffer)-1,
-                &word_size);
-        if (status) {
-            printf("read_word failed %d\n", status);
-            return status;
-        }
-
-        // Add a space, and display the word.
-        word_buffer[word_size++] = ' ';
-        display_word(&oled, oled_addr, word_buffer, word_size);
+    while (!terminate) {
 
         // If there something in the queue, grab it.
         if (!queue_isempty(schedulerq)) {
@@ -1028,6 +1034,9 @@ int main()
             }
         }
     }
+
+    // The scheduler is no longer available.
+    schedulerq = 0;
 
     // blank the display on exit.
     XScuWdt_Stop(&wdt.device);
