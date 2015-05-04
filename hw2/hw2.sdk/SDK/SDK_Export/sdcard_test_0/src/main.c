@@ -431,6 +431,10 @@ volatile int terminate = 0;
 volatile int display_update_delay_ms = 1000;
 static const int display_update_minimum_delay_ms = 50;
 
+// This is needed to update the display update timer interval.
+// XXX there's probably a better way to do this.
+XScuWdt *display_update_timer = 0;
+
 // The buttons interrupt service routine.
 static void buttons_isr(void *context)
 {
@@ -459,12 +463,20 @@ static void buttons_isr(void *context)
     // Increase the display update delay.
     case button_up:
         display_update_delay_ms += display_update_minimum_delay_ms;
+        if (display_update_timer) {
+            XScuWdt_LoadWdt(display_update_timer,
+                (COUNTS_PER_SECOND/1000) * display_update_delay_ms);
+        }
         break;
 
     // Decrease the display update delay.
     case button_down:
         if (display_update_delay_ms > display_update_minimum_delay_ms) {
             display_update_delay_ms -= display_update_minimum_delay_ms;
+        }
+        if (display_update_timer) {
+            XScuWdt_LoadWdt(display_update_timer,
+                (COUNTS_PER_SECOND/1000) * display_update_delay_ms);
         }
         break;
 
@@ -995,7 +1007,7 @@ int main()
     wdt_t wdt = {
         .id = XPAR_PS7_SCUWDT_0_DEVICE_ID,
         .interrupt = XPS_SCU_WDT_INT_ID,
-        .value = COUNTS_PER_SECOND,
+        .value = (COUNTS_PER_SECOND/1000) * display_update_delay_ms,
         .isr = wdt_isr,
         .isr_context = &display_update_context,
     };
@@ -1004,6 +1016,7 @@ int main()
         printf("initialize_wdt failed %d\n", status);
         return status;
     }
+    display_update_timer = &wdt.device;
 
     // The scheduler runqueue.
     queue_t runq;
