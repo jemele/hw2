@@ -392,6 +392,16 @@ static void ttc0_isr(void *context)
     }
 }
 
+// Toggle the MIO7 LED.
+static void toggle_mio7_led(void *context)
+{
+    XGpioPs *gpio = (XGpioPs*)context;
+
+    const int pin = 7;
+    const int pin_state = XGpioPs_ReadPin(gpio, pin);
+    XGpioPs_WritePin(gpio, pin, !pin_state);
+}
+
 // The timer1 interrupt service routine, which toggles led mio7.
 static void ttc1_isr(void *context)
 {
@@ -402,13 +412,14 @@ static void ttc1_isr(void *context)
     const int status = XTtcPs_GetInterruptStatus(&ttc->device);
     XTtcPs_ClearInterruptStatus(&ttc->device, status);
 
-    const int pin = 7;
-    XGpioPs *gpio = ttc->isr_context;
-    if (!gpio) {
-        return;
+    if (schedulerq) {
+        task_t *t = malloc(sizeof(task_t));
+        if (t) {
+            t->handler = toggle_mio7_led;
+            t->context = ttc->isr_context;
+            queue_enqueue(schedulerq, t);
+        }
     }
-    const int pin_state = XGpioPs_ReadPin(gpio, pin);
-    XGpioPs_WritePin(gpio, pin, !pin_state);
 }
 
 // The terminate flag. If set, the program should terminate.
