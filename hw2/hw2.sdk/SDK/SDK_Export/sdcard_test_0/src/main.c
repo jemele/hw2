@@ -14,6 +14,109 @@
 #include "font_5x7.h"
 #include "ff.h"
 
+// A queue, usefull for scheduling.
+#define QUEUE_MAXSIZE 10
+typedef struct {
+    int head;
+    int tail;
+    void *q[QUEUE_MAXSIZE];
+} queue_t;
+
+// Initialize the queue.
+static void queue_init(queue_t *q)
+{
+    q->head = q->tail = -1;
+}
+
+// Return 1 if the queue is full, 0 otherwise.
+// The queue is full if the tail wraps to the head.
+static int queue_isfull(queue_t *q)
+{
+    return (q->tail - QUEUE_MAXSIZE) == q->head;
+}
+
+// Return 1 if the queue is empty, 0 otherwise.
+// The queue is empty if the head and tail are the same.
+static int queue_isempty(queue_t *q)
+{
+    return q->tail == q->head;
+}
+
+// Enqueue an item onto the queue.
+// Return non-zero on failure.
+static int queue_enqueue(queue_t *q, void *p)
+{
+    if (queue_isfull(q)) {
+        return XST_FAILURE;
+    }
+    q->tail++;
+    q->q[q->tail % QUEUE_MAXSIZE] = p;
+    return 0;
+}
+
+// Dequeue an item from the queue.
+// Return non-zero on failure.
+static int queue_dequeue(queue_t *q, void **p)
+{
+    if (queue_isempty(q)) {
+        return XST_FAILURE;
+    }
+    q->head++;
+    *p = q->q[q->head % QUEUE_MAXSIZE];
+    return 0;
+}
+
+// Test the queue implementation
+// Return non-zero on failure.
+static int queue_test()
+{
+    queue_t q;
+    queue_init(&q);
+
+    // enqueue to capacity.
+    printf("queue enqueue test\n");
+    int i;
+    for (i = 0; i < QUEUE_MAXSIZE; ++i) {
+        if (queue_enqueue(&q, (void*)i)) {
+            printf("queue failed for %d\n", i);
+            return XST_FAILURE;
+        }
+    }
+
+    // Verify dequeue matches enqueue.
+    printf("queue dequeue test\n");
+    for (i = 0; i < QUEUE_MAXSIZE; ++i) {
+        int n;
+        if (queue_dequeue(&q,(void**)&n)) {
+            printf("dequeue failed for %d\n", i);
+            return XST_FAILURE;
+        }
+        if (n != i) {
+            printf("dequeue failed %d %d\n", n, i);
+            return XST_FAILURE;
+        }
+    }
+
+    // Verify mingled queue/dequeue.
+    printf("queue interleave test\n");
+    for (i = 0; i < QUEUE_MAXSIZE; ++i) {
+        if (queue_enqueue(&q, (void*)i)) {
+            printf("queue failed for %d\n", i);
+            return XST_FAILURE;
+        }
+        int n;
+        if (queue_dequeue(&q, (void**)&n)) {
+            printf("dequeue failed for %d\n", i);
+            return XST_FAILURE;
+        }
+        if (n != i) {
+            printf("dequeue failed %d %d\n", n, i);
+            return XST_FAILURE;
+        }
+    }
+    return 0;
+}
+
 // Used by the mmc/sdcard driver.
 u32 FlashReadBaseAddress = XPAR_PS7_SD_0_S_AXI_BASEADDR;
 
@@ -701,6 +804,13 @@ int main()
     printf("Hello world\n");
 
     int status;
+
+    // Verify queue behavior.
+    status = queue_test();
+    if (status) {
+        printf("queue_test failed %d\n", status);
+        return status;
+    }
 
     i2c_t oled = {
         .id = XPAR_PS7_I2C_0_DEVICE_ID,
