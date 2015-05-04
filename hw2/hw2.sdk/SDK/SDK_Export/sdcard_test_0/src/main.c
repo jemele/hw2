@@ -387,7 +387,9 @@ static void ttc0_isr(void *context)
         if (t) {
             t->handler = scroll_display;
             t->context = ttc->isr_context;
-            queue_enqueue(schedulerq, t);
+            if (queue_enqueue(schedulerq, t)) {
+                free(t);
+            }
         }
     }
 }
@@ -417,7 +419,9 @@ static void ttc1_isr(void *context)
         if (t) {
             t->handler = toggle_mio7_led;
             t->context = ttc->isr_context;
-            queue_enqueue(schedulerq, t);
+            if (queue_enqueue(schedulerq, t)) {
+                free(t);
+            }
         }
     }
 }
